@@ -25,6 +25,7 @@ CITY_COORDS = {
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
+AMAP_GEOCODE_URL = "https://restapi.amap.com/v3/geocode/geo"
 DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions"
 
 LANG_FROM_LABEL = {"中文": "zh", "English": "en"}
@@ -91,6 +92,9 @@ STRINGS = {
         "hero_sub": "中国校园儿童高温健康风险 AI 预警系统",
         "hero_desc": "面向学校与儿童的 AI 驱动高温健康预警系统。",
         "warn_city": "未找到城市，已改用北京演示数据。",
+        "ok_amap": "已使用高德地图定位学校位置",
+        "amap_addr_prefix": "高德返回地址：",
+        "warn_amap_fallback": "高德地图未能定位该学校，已改用城市坐标。",
         "ok_live": "正在使用 Open-Meteo 实时天气数据。",
         "warn_mock": "无法获取实时天气，使用演示模拟数据。",
         "warn_aq": "Open-Meteo 空气质量接口不可用，正在继续使用不含空气质量因子的预警。",
@@ -152,6 +156,9 @@ STRINGS = {
         "hero_sub": "AI-powered heat health early warning system for schools and children.",
         "hero_desc": "School-focused prototype for heat planning and child safety.",
         "warn_city": "City not found. Falling back to Beijing demo data.",
+        "ok_amap": "School location resolved by Amap",
+        "amap_addr_prefix": "Amap address:",
+        "warn_amap_fallback": "Could not locate the school via Amap. Using city-level coordinates.",
         "ok_live": "Using live weather data from Open-Meteo.",
         "warn_mock": "Live weather data unavailable. Using demo mock data.",
         "warn_aq": "Air Quality API unavailable. Continuing without air quality in the risk score.",
@@ -334,6 +341,55 @@ def _daily_max_humidity(hourly_times: list[str], humidity_values: list) -> dict[
     return {day: int(round(value)) for day, value in daily_max.items()}
 
 
+def geocode_school_with_amap(school_name: str, city_name: str) -> dict:
+    """
+    Resolve school coordinates via Amap Geocode API.
+    Requires AMAP_API_KEY. Returns latitude, longitude, formatted_address, source=\"Amap\".
+    """
+    key = (os.environ.get("AMAP_API_KEY") or "").strip()
+    if not key:
+        raise ValueError("AMAP_API_KEY not set")
+
+    city = (city_name or "").strip()
+    school = school_name.strip()
+    address = f"{city}{school}"
+
+    response = requests.get(
+        AMAP_GEOCODE_URL,
+        params={
+            "key": key,
+            "address": address,
+            "city": city,
+            "output": "JSON",
+        },
+        timeout=10,
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    if str(data.get("status")) != "1":
+        reason = data.get("info") or data.get("infocode") or "Amap geocode error"
+        raise ValueError(str(reason))
+
+    geocodes = data.get("geocodes") or []
+    if not geocodes:
+        raise ValueError("Amap returned no geocodes")
+
+    loc_str = geocodes[0].get("location") or ""
+    parts = loc_str.split(",")
+    if len(parts) != 2:
+        raise ValueError("Invalid Amap location format")
+    longitude, latitude = float(parts[0]), float(parts[1])
+    formatted_address = geocodes[0].get("formatted_address") or ""
+
+    return {
+        "latitude": latitude,
+        "longitude": longitude,
+        "formatted_address": formatted_address,
+        "source": "Amap",
+    }
+
+
 def geocode_city(city_name: str) -> dict:
     query = city_name.strip()
     if len(query) < 2:
@@ -503,28 +559,61 @@ def format_location(location: dict) -> str:
     return f"{name}, {country}" if country else name
 
 
-def load_forecast(city_name: str) -> tuple[pd.DataFrame, bool, dict, bool]:
+def load_forecast(
+    city_name: str, school_name: str = "",
+) -> tuple[pd.DataFrame, bool, dict, bool, dict]:
+    """
+    Load 7-day forecast. Tries Amap school geocode when AMAP_API_KEY and school name exist;
+    otherwise uses Open-Meteo city geocoding. Returns (df, using_live, location, geocode_failed, meta).
+    """
     city_input = (city_name or "").strip() or FALLBACK_CITY
     geocode_failed = False
+    meta: dict = {"amap_ok": False, "amap_fail": False, "formatted_address": None}
 
-    try:
-        location = geocode_city(city_input)
-    except Exception:
-        geocode_failed = True
-        lat, lon = CITY_COORDS[FALLBACK_CITY]
-        location = {
-            "latitude": lat,
-            "longitude": lon,
-            "display_name": FALLBACK_CITY,
-            "country": "China",
-        }
+    amap_key = (os.environ.get("AMAP_API_KEY") or "").strip()
+    school_trim = (school_name or "").strip()
+
+    location: dict | None = None
+    if amap_key and school_trim:
+        try:
+            amap_loc = geocode_school_with_amap(school_trim, city_input)
+            fa = amap_loc["formatted_address"]
+            location = {
+                "latitude": amap_loc["latitude"],
+                "longitude": amap_loc["longitude"],
+                "display_name": fa or f"{school_trim}, {city_input}",
+                "country": "",
+                "source": "Amap",
+                "formatted_address": fa,
+            }
+            meta["amap_ok"] = True
+            meta["formatted_address"] = fa or None
+        except Exception:
+            meta["amap_fail"] = True
+
+    if location is None:
+        try:
+            location = geocode_city(city_input)
+            location.setdefault("source", "Open-Meteo")
+            location.setdefault("formatted_address", None)
+        except Exception:
+            geocode_failed = True
+            lat, lon = CITY_COORDS[FALLBACK_CITY]
+            location = {
+                "latitude": lat,
+                "longitude": lon,
+                "display_name": FALLBACK_CITY,
+                "country": "China",
+                "source": "fallback",
+                "formatted_address": None,
+            }
 
     try:
         df = fetch_forecast(location["latitude"], location["longitude"])
-        return df, True, location, geocode_failed
+        return df, True, location, geocode_failed, meta
     except Exception:
         mock_city = FALLBACK_CITY if geocode_failed else _mock_city_key(city_input)
-        return build_mock_forecast(mock_city), False, location, geocode_failed
+        return build_mock_forecast(mock_city), False, location, geocode_failed, meta
 
 
 def risk_level(score: float) -> str:
@@ -1032,13 +1121,21 @@ hero_html = f"""
     """
 st.markdown(hero_html, unsafe_allow_html=True)
 
-forecast, using_live, location, geocode_failed = load_forecast(city)
+forecast, using_live, location, geocode_failed, location_meta = load_forecast(
+    city, school_name
+)
 forecast, air_quality_ok = merge_air_quality_into_forecast(
     forecast, location["latitude"], location["longitude"]
 )
 
 if geocode_failed:
     st.warning(T["warn_city"])
+if location_meta.get("amap_ok"):
+    st.success(T["ok_amap"])
+    if location_meta.get("formatted_address"):
+        st.caption(f"{T['amap_addr_prefix']} {location_meta['formatted_address']}")
+elif location_meta.get("amap_fail"):
+    st.warning(T["warn_amap_fallback"])
 if using_live:
     st.success(T["ok_live"])
 elif not geocode_failed:
@@ -1144,6 +1241,7 @@ guidance_context = {
     "language": "Chinese" if lang == "zh" else "English",
     "us_aqi_daily_max": today_us_aqi,
     "pm25_daily_max_ug_m3": today_pm25,
+    "geocoding_source": location.get("source", ""),
 }
 
 guidance_teachers = generate_guidance(
