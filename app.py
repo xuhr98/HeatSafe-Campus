@@ -24,6 +24,201 @@ OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions"
 
+LANG_FROM_LABEL = {"中文": "zh", "English": "en"}
+
+SCHOOL_TYPE_LABELS = {
+    "zh": {
+        "Kindergarten": "幼儿园",
+        "Primary School": "小学",
+        "Middle School": "初中",
+    },
+    "en": {
+        "Kindergarten": "Kindergarten",
+        "Primary School": "Primary School",
+        "Middle School": "Middle School",
+    },
+}
+
+RISK_SHORT = {
+    "zh": {"Low": "低", "Moderate": "中等", "High": "高", "Extreme": "极高"},
+    "en": {"Low": "Low", "Moderate": "Moderate", "High": "High", "Extreme": "Extreme"},
+}
+
+RISK_LEGEND_CHIPS = {
+    "zh": [
+        ("一级 · 低", "#2E7D32", "#E8F5E9"),
+        ("二级 · 中等", "#F9A825", "#FFF8E1"),
+        ("三级 · 高", "#EF6C00", "#FFF3E0"),
+        ("四级 · 极高", "#C62828", "#FFEBEE"),
+    ],
+    "en": [
+        ("Level 1 · Low", "#2E7D32", "#E8F5E9"),
+        ("Level 2 · Moderate", "#F9A825", "#FFF8E1"),
+        ("Level 3 · High", "#EF6C00", "#FFF3E0"),
+        ("Level 4 · Extreme", "#C62828", "#FFEBEE"),
+    ],
+}
+
+RISK_LEVEL_LONG = {
+    "zh": {"Low": "一级 · 低", "Moderate": "二级 · 中等", "High": "三级 · 高", "Extreme": "四级 · 极高"},
+    "en": {
+        "Low": "Level 1 · Low",
+        "Moderate": "Level 2 · Moderate",
+        "High": "Level 3 · High",
+        "Extreme": "Level 4 · Extreme",
+    },
+}
+
+STRINGS = {
+    "zh": {
+        "sidebar_header": "### 🏫 学校设置",
+        "sidebar_caption": "请输入学校与城市，评估今日儿童高温健康风险。",
+        "lang_label": "Language / 语言",
+        "school_name": "学校名称",
+        "school_ph": "例如：阳光小学",
+        "city_name": "城市名称",
+        "city_ph": "例如：北京、东京、上海",
+        "school_type": "学段 / 学校类型",
+        "outdoor": "今日计划开展户外活动",
+        "use_ai": "使用 AI 生成建议",
+        "tip_climate": "🌡️ **气象** · 尽量使用实时天气数据",
+        "tip_school": "🏫 **学校** · 面向儿童的综合风险因素",
+        "tip_safety": "⚠️ **安全** · 预警与健康教育，非医学诊断",
+        "hero_title": "🌤️ 热浪安全校园 (HeatSafe Campus)",
+        "hero_sub": "中国校园儿童高温健康风险 AI 预警系统",
+        "hero_desc": "面向学校与儿童的 AI 驱动高温健康预警系统。",
+        "warn_city": "未找到城市，已改用北京演示数据。",
+        "ok_live": "正在使用 Open-Meteo 实时天气数据。",
+        "warn_mock": "无法获取实时天气，使用演示模拟数据。",
+        "warn_no_key": "未检测到 DeepSeek API 密钥，改用规则模板建议。",
+        "warn_ai_fail": "AI 建议不可用，改用规则模板建议。",
+        "ctx_data": "数据",
+        "ctx_live": "Open-Meteo 实时",
+        "ctx_demo": "演示模拟",
+        "ctx_outdoor": "· 今日计划户外活动",
+        "sec_dash": "📊 今日高温健康看板",
+        "risk_scale": "风险等级：",
+        "metric_risk": "风险等级",
+        "metric_temp": "气温",
+        "metric_hum": "湿度",
+        "metric_uv": "紫外线指数",
+        "metric_temp_sub": "今日预报最高气温",
+        "metric_hum_sub": "日最高相对湿度",
+        "metric_uv_sub": "今日紫外线峰值",
+        "metric_score": "得分",
+        "sec_chart": "📈 七日天气趋势",
+        "chart_cap": "气温与湿度展望 ·",
+        "chart_live": "实时",
+        "chart_mock": "模拟",
+        "exp_table": "📋 查看七日预报明细表",
+        "sec_guide": "👧 分角色儿童安全建议",
+        "cap_ai_ok": "基于今日上下文由 DeepSeek 生成的建议。关闭 AI 或请求失败时使用规则模板。",
+        "cap_rules": "基于今日风险等级、气温、湿度、紫外线与活动安排的规则建议。",
+        "role_teachers": "教师",
+        "role_parents": "家长",
+        "role_nurses": "校医",
+        "placeholder_school": "您的学校",
+        "disclaimer": (
+            "<strong>免责声明：</strong>本工具仅提供预警与健康教育支持，不提供医学诊断。"
+        ),
+        "chart_legend_max_temp": "最高气温 (°C)",
+        "chart_legend_hum": "相对湿度 (%)",
+        "chart_y_temp": "气温 (°C)",
+        "chart_y_hum": "相对湿度 (%)",
+    },
+    "en": {
+        "sidebar_header": "### 🏫 School settings",
+        "sidebar_caption": "Enter your school and city to assess today's child heat health risk.",
+        "lang_label": "Language / 语言",
+        "school_name": "School name",
+        "school_ph": "e.g. Sunshine Elementary",
+        "city_name": "City name",
+        "city_ph": "e.g. Beijing, Tokyo, Shanghai",
+        "school_type": "School type",
+        "outdoor": "Outdoor activity planned today",
+        "use_ai": "Use AI-generated guidance",
+        "tip_climate": "🌡️ **Climate** · Live weather when available",
+        "tip_school": "🏫 **School** · Child-focused risk factors",
+        "tip_safety": "⚠️ **Safety** · Early warning, not diagnosis",
+        "hero_title": "🌤️ HeatSafe Campus",
+        "hero_sub": "AI-powered heat health early warning system for schools and children.",
+        "hero_desc": "School-focused prototype for heat planning and child safety.",
+        "warn_city": "City not found. Falling back to Beijing demo data.",
+        "ok_live": "Using live weather data from Open-Meteo.",
+        "warn_mock": "Live weather data unavailable. Using demo mock data.",
+        "warn_no_key": "DeepSeek API key not found. Using rule-based guidance.",
+        "warn_ai_fail": "AI guidance unavailable. Using rule-based guidance.",
+        "ctx_data": "Data",
+        "ctx_live": "live Open-Meteo data",
+        "ctx_demo": "demo mock data",
+        "ctx_outdoor": " · Outdoor activity planned",
+        "sec_dash": "📊 Today's heat health dashboard",
+        "risk_scale": "Risk scale:",
+        "metric_risk": "Risk level",
+        "metric_temp": "Temperature",
+        "metric_hum": "Humidity",
+        "metric_uv": "UV index",
+        "metric_temp_sub": "Today's forecast max",
+        "metric_hum_sub": "Daily maximum",
+        "metric_uv_sub": "Peak UV today",
+        "metric_score": "Score",
+        "sec_chart": "📈 7-day weather trend",
+        "chart_cap": "Temperature and humidity outlook ·",
+        "chart_live": "live data",
+        "chart_mock": "mock data",
+        "exp_table": "📋 View detailed 7-day forecast table",
+        "sec_guide": "👧 Role-specific guidance for child safety",
+        "cap_ai_ok": "AI-generated guidance (DeepSeek) from today's context. "
+        "Rule-based templates apply if AI is off or unavailable.",
+        "cap_rules": "Rule-based actions from today's risk level, temperature, humidity, UV, and activity plan.",
+        "role_teachers": "Teachers",
+        "role_parents": "Parents",
+        "role_nurses": "School Nurses",
+        "placeholder_school": "Your school",
+        "disclaimer": (
+            "<strong>Disclaimer:</strong> This tool provides early warning and health education support only. "
+            "It does not provide medical diagnosis."
+        ),
+        "chart_legend_max_temp": "Max temperature (°C)",
+        "chart_legend_hum": "Humidity (%)",
+        "chart_y_temp": "Temperature (°C)",
+        "chart_y_hum": "Humidity (%)",
+    },
+}
+
+FORECAST_COLUMN_NAMES = {
+    "zh": {
+        "Day": "日期",
+        "Max Temp (°C)": "最高气温 (°C)",
+        "Apparent temp (°C)": "体感最高温 (°C)",
+        "Humidity (%)": "相对湿度 (%)",
+        "UV Index": "紫外线指数",
+        "Conditions": "天气状况",
+    },
+}
+
+CONDITION_LABELS_ZH = {
+    "Forecast": "预报",
+    "Sunny": "晴",
+    "Partly cloudy": "多云",
+    "Cloudy": "阴",
+    "Overcast": "阴天",
+    "Light rain": "小雨",
+}
+
+
+def localize_forecast_display(df: pd.DataFrame, lang: str) -> pd.DataFrame:
+    """Rename columns / condition strings for display only."""
+    if lang == "en":
+        return df
+    out = df.rename(columns=FORECAST_COLUMN_NAMES["zh"])
+    cond_src = "Conditions"
+    if cond_src in df.columns:
+        zh_col = FORECAST_COLUMN_NAMES["zh"][cond_src]
+        out[zh_col] = df[cond_src].map(lambda x: CONDITION_LABELS_ZH.get(str(x), x))
+    return out
+
+
 CITY_WEATHER = {
     "Beijing": {"max_temp": 34, "humidity": 45},
     "Shanghai": {"max_temp": 36, "humidity": 72},
@@ -42,25 +237,21 @@ RISK_STYLES = {
         "level": 1,
         "color": "#2E7D32",
         "bg": "#E8F5E9",
-        "label": "Level 1 · Low",
     },
     "Moderate": {
         "level": 2,
         "color": "#F9A825",
         "bg": "#FFF8E1",
-        "label": "Level 2 · Moderate",
     },
     "High": {
         "level": 3,
         "color": "#EF6C00",
         "bg": "#FFF3E0",
-        "label": "Level 3 · High",
     },
     "Extreme": {
         "level": 4,
         "color": "#C62828",
         "bg": "#FFEBEE",
-        "label": "Level 4 · Extreme",
     },
 }
 
@@ -335,31 +526,27 @@ def render_guide_card(title: str, icon: str, body: str, accent: str) -> None:
     )
 
 
-def render_risk_legend() -> None:
-    levels = [
-        ("Level 1 · Low", "#2E7D32", "#E8F5E9"),
-        ("Level 2 · Moderate", "#F9A825", "#FFF8E1"),
-        ("Level 3 · High", "#EF6C00", "#FFF3E0"),
-        ("Level 4 · Extreme", "#C62828", "#FFEBEE"),
-    ]
+def render_risk_legend(lang: str) -> None:
     chips = "".join(
         f'<span style="display:inline-block;margin:0 8px 6px 0;padding:4px 10px;'
         f'border-radius:6px;background:{bg};color:{fg};font-size:0.78rem;">{label}</span>'
-        for label, fg, bg in levels
+        for label, fg, bg in RISK_LEGEND_CHIPS[lang]
     )
+    prefix = STRINGS[lang]["risk_scale"]
     st.markdown(
-        f'<p style="font-size:0.85rem;color:#607D8B;margin:0 0 1rem 0;">Risk scale: {chips}</p>',
+        f'<p style="font-size:0.85rem;color:#607D8B;margin:0 0 1rem 0;">{prefix} {chips}</p>',
         unsafe_allow_html=True,
     )
 
 
-def build_forecast_chart(forecast: pd.DataFrame) -> go.Figure:
+def build_forecast_chart(forecast: pd.DataFrame, lang: str) -> go.Figure:
+    T = STRINGS[lang]
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(
         go.Scatter(
             x=forecast["Day"],
             y=forecast["Max Temp (°C)"],
-            name="Max temperature (°C)",
+            name=T["chart_legend_max_temp"],
             mode="lines+markers",
             line=dict(color="#009EDC", width=2.5),
             marker=dict(size=7, color="#009EDC"),
@@ -370,7 +557,7 @@ def build_forecast_chart(forecast: pd.DataFrame) -> go.Figure:
         go.Scatter(
             x=forecast["Day"],
             y=forecast["Humidity (%)"],
-            name="Humidity (%)",
+            name=T["chart_legend_hum"],
             mode="lines+markers",
             line=dict(color="#7CB9A8", width=2, dash="dot"),
             marker=dict(size=6, color="#7CB9A8"),
@@ -388,14 +575,14 @@ def build_forecast_chart(forecast: pd.DataFrame) -> go.Figure:
     )
     fig.update_xaxes(showgrid=True, gridcolor="#EEF2F5", title="")
     fig.update_yaxes(
-        title_text="Temperature (°C)",
+        title_text=T["chart_y_temp"],
         secondary_y=False,
         showgrid=True,
         gridcolor="#EEF2F5",
         rangemode="tozero",
     )
     fig.update_yaxes(
-        title_text="Humidity (%)",
+        title_text=T["chart_y_hum"],
         secondary_y=True,
         showgrid=False,
         rangemode="tozero",
@@ -403,84 +590,166 @@ def build_forecast_chart(forecast: pd.DataFrame) -> go.Figure:
     return fig
 
 
-# Rule-based guidance: base text per risk level + optional weather/activity add-ons.
+# Rule-based guidance per language: base text + optional weather/activity add-ons.
 GUIDANCE_BASE = {
-    "Teachers": {
-        "Low": (
-            "Level 1 (Low): Usual outdoor classes and recess are fine. "
-            "Remind students to drink water at breaks and watch for normal tiredness."
-        ),
-        "Moderate": (
-            "Level 2 (Moderate): Shorten high-intensity games and add shade breaks every 25–30 minutes. "
-            "Keep drinking water visible in the classroom before afternoon sessions."
-        ),
-        "High": (
-            "Level 3 (High): Move PE and assemblies to shaded or indoor areas where possible. "
-            "Schedule a hydration pause every 20 minutes and reduce running drills."
-        ),
-        "Extreme": (
-            "Level 4 (Extreme): Postpone or cancel outdoor PE, sports day, and long assemblies. "
-            "Keep children in cool indoor spaces and check on them during transitions."
-        ),
+    "en": {
+        "Teachers": {
+            "Low": (
+                "Level 1 (Low): Usual outdoor classes and recess are fine. "
+                "Remind students to drink water at breaks and watch for normal tiredness."
+            ),
+            "Moderate": (
+                "Level 2 (Moderate): Shorten high-intensity games and add shade breaks every 25–30 minutes. "
+                "Keep drinking water visible in the classroom before afternoon sessions."
+            ),
+            "High": (
+                "Level 3 (High): Move PE and assemblies to shaded or indoor areas where possible. "
+                "Schedule a hydration pause every 20 minutes and reduce running drills."
+            ),
+            "Extreme": (
+                "Level 4 (Extreme): Postpone or cancel outdoor PE, sports day, and long assemblies. "
+                "Keep children in cool indoor spaces and check on them during transitions."
+            ),
+        },
+        "Parents": {
+            "Low": (
+                "Level 1 (Low): Send your child with a full water bottle and breathable clothing. "
+                "Normal school routines are appropriate for today's conditions."
+            ),
+            "Moderate": (
+                "Level 2 (Moderate): Pack extra water and a light hat. "
+                "Ask your child to drink before leaving home and again when they return."
+            ),
+            "High": (
+                "Level 3 (High): Choose loose, light-coloured clothes and two water bottles if possible. "
+                "Avoid extra outdoor play right after school; offer a cool drink and rest indoors."
+            ),
+            "Extreme": (
+                "Level 4 (Extreme): Limit time outdoors before and after school during peak heat. "
+                "Ensure your child rests in a cool place and drinks water regularly through the day."
+            ),
+        },
+        "School Nurses": {
+            "Low": (
+                "Level 1 (Low): Confirm drinking water is available in corridors and playgrounds. "
+                "Share routine heat-awareness tips with staff—no escalation needed today."
+            ),
+            "Moderate": (
+                "Level 2 (Moderate): Brief teachers on early signs of heat discomfort (flushing, headache, thirst). "
+                "Stock oral rehydration and rest space for any student who feels unwell."
+            ),
+            "High": (
+                "Level 3 (High): Increase visibility during recess; note students who sit out or appear sluggish. "
+                "Prepare a cool rest area, fluids, and contact protocol if a child does not recover quickly."
+            ),
+            "Extreme": (
+                "Level 4 (Extreme): Activate your school heat-response checklist and coordinate with leadership. "
+                "Monitor high-risk students closely and support staff with clear rest-and-hydration rules."
+            ),
+        },
     },
-    "Parents": {
-        "Low": (
-            "Level 1 (Low): Send your child with a full water bottle and breathable clothing. "
-            "Normal school routines are appropriate for today's conditions."
-        ),
-        "Moderate": (
-            "Level 2 (Moderate): Pack extra water and a light hat. "
-            "Ask your child to drink before leaving home and again when they return."
-        ),
-        "High": (
-            "Level 3 (High): Choose loose, light-coloured clothes and two water bottles if possible. "
-            "Avoid extra outdoor play right after school; offer a cool drink and rest indoors."
-        ),
-        "Extreme": (
-            "Level 4 (Extreme): Limit time outdoors before and after school during peak heat. "
-            "Ensure your child rests in a cool place and drinks water regularly through the day."
-        ),
-    },
-    "School Nurses": {
-        "Low": (
-            "Level 1 (Low): Confirm drinking water is available in corridors and playgrounds. "
-            "Share routine heat-awareness tips with staff—no escalation needed today."
-        ),
-        "Moderate": (
-            "Level 2 (Moderate): Brief teachers on early signs of heat discomfort (flushing, headache, thirst). "
-            "Stock oral rehydration and rest space for any student who feels unwell."
-        ),
-        "High": (
-            "Level 3 (High): Increase visibility during recess; note students who sit out or appear sluggish. "
-            "Prepare a cool rest area, fluids, and contact protocol if a child does not recover quickly."
-        ),
-        "Extreme": (
-            "Level 4 (Extreme): Activate your school heat-response checklist and coordinate with leadership. "
-            "Monitor high-risk students closely and support staff with clear rest-and-hydration rules."
-        ),
+    "zh": {
+        "Teachers": {
+            "Low": (
+                "一级（低）：可按常规安排室外课与课间活动。"
+                "提醒学生在休息时补水，留意一般性疲倦即可。"
+            ),
+            "Moderate": (
+                "二级（中等）：缩短剧烈运动时间，每25–30分钟安排阴凉处休息。"
+                "下午课前确保教室内有饮用水提示。"
+            ),
+            "High": (
+                "三级（高）：尽量将体育课与集会安排在树荫或室内。"
+                "每20分钟安排补水停顿，减少长跑类训练。"
+            ),
+            "Extreme": (
+                "四级（极高）：推迟或取消室外体育课、运动会及长时间集会。"
+                "让学生留在凉爽室内，走廊切换时多加照看。"
+            ),
+        },
+        "Parents": {
+            "Low": (
+                "一级（低）：为孩子准备装满水的杯子与透气衣物。"
+                "今日可按正常作息到校。"
+            ),
+            "Moderate": (
+                "二级（中等）：多备一瓶水并携带轻便遮阳帽。"
+                "出门前与放学后提醒孩子补水。"
+            ),
+            "High": (
+                "三级（高）：尽量选择宽松浅色衣物，条件允许可备两瓶水。"
+                "放学后避免额外户外活动，回家后及时补水并在阴凉处休息。"
+            ),
+            "Extreme": (
+                "四级（极高）：早晚高峰尽量少在烈日下停留。"
+                "确保孩子有凉爽休息环境并全日规律饮水。"
+            ),
+        },
+        "School Nurses": {
+            "Low": (
+                "一级（低）：确认走廊与操场饮水点可用。"
+                "向教职工简单提示防暑常识即可。"
+            ),
+            "Moderate": (
+                "二级（中等）：向教师强调早期不适迹象（面红、头痛、口渴）。"
+                "备好口服补液与临时休息区域。"
+            ),
+            "High": (
+                "三级（高）：课间加强巡查，留意久坐旁观或精神不振的学生。"
+                "准备凉爽休息区、饮水及家长联络流程。"
+            ),
+            "Extreme": (
+                "四级（极高）：启动校园高温应对清单并与校方协同。"
+                "重点关注体弱学生，协助落实明确的休息与补水规则。"
+            ),
+        },
     },
 }
 
 GUIDANCE_ADDONS = {
-    "high_uv": {
-        "Teachers": "UV is very high: plan activities before 10 a.m. or after 4 p.m., require hats, and use shaded areas.",
-        "Parents": "UV is very high: apply sunscreen, send a wide-brim hat, and avoid long sun exposure after school.",
-        "School Nurses": "UV is very high: remind staff about sun protection and watch for sun-related discomfort on exposed skin.",
+    "en": {
+        "high_uv": {
+            "Teachers": "UV is very high: plan activities before 10 a.m. or after 4 p.m., require hats, and use shaded areas.",
+            "Parents": "UV is very high: apply sunscreen, send a wide-brim hat, and avoid long sun exposure after school.",
+            "School Nurses": "UV is very high: remind staff about sun protection and watch for sun-related discomfort on exposed skin.",
+        },
+        "high_humidity": {
+            "Teachers": "Humidity is elevated: heat feels stronger—slow active games and allow more recovery time in shade.",
+            "Parents": "Humidity is elevated: encourage frequent small sips of water; sweaty clothes dry more slowly today.",
+            "School Nurses": "Humidity is elevated: heat plus moisture increases strain—prioritize cooling breaks and fluids.",
+        },
+        "outdoor_planned": {
+            "Teachers": "Outdoor activity is scheduled: assign a hydration leader, cap session length, and keep shade and water nearby.",
+            "Parents": "Outdoor activity is scheduled: send extra water and confirm the school has shade or adjusted timing.",
+            "School Nurses": "Outdoor activity is scheduled: be available during the session and review the plan for heat-related stops.",
+        },
+        "very_hot": {
+            "Teachers": "Temperature is high: avoid strenuous drills and watch for students who stop participating or look unwell.",
+            "Parents": "Temperature is high: a light meal and water before school help; check in on how your child feels at pickup.",
+            "School Nurses": "Temperature is high: treat heat discomfort seriously—move the child to cool space and notify guardians if needed.",
+        },
     },
-    "high_humidity": {
-        "Teachers": "Humidity is elevated: heat feels stronger—slow active games and allow more recovery time in shade.",
-        "Parents": "Humidity is elevated: encourage frequent small sips of water; sweaty clothes dry more slowly today.",
-        "School Nurses": "Humidity is elevated: combine heat and moisture increases strain—prioritize cooling breaks and fluids.",
-    },
-    "outdoor_planned": {
-        "Teachers": "Outdoor activity is scheduled: assign a hydration leader, cap session length, and keep shade and water nearby.",
-        "Parents": "Outdoor activity is scheduled: send extra water and confirm the school has shade or adjusted timing.",
-        "School Nurses": "Outdoor activity is scheduled: be available during the session and review the plan for heat-related stops.",
-    },
-    "very_hot": {
-        "Teachers": f"Temperature is high: avoid strenuous drills and watch for students who stop participating or look unwell.",
-        "Parents": "Temperature is high: a light meal and water before school help; check in on how your child feels at pickup.",
-        "School Nurses": "Temperature is high: treat heat discomfort seriously—move the child to cool space and notify guardians if needed.",
+    "zh": {
+        "high_uv": {
+            "Teachers": "紫外线很强：尽量安排在上午10点前或下午4点后活动，要求学生戴帽并优先使用阴凉处。",
+            "Parents": "紫外线很强：涂抹防晒霜、准备宽檐帽，放学后避免长时间暴晒。",
+            "School Nurses": "紫外线很强：提醒教职工防晒措施，留意暴露皮肤的晒伤不适迹象（非诊断）。",
+        },
+        "high_humidity": {
+            "Teachers": "湿度偏高：体感更闷热，放慢对抗类游戏并在阴凉处增加恢复时间。",
+            "Parents": "湿度偏高：鼓励孩子少量多次饮水；衣物不易干透，可多备一件替换上衣。",
+            "School Nurses": "湿度偏高：闷热叠加潮湿更易不适，优先安排降温补水休息。",
+        },
+        "outdoor_planned": {
+            "Teachers": "今日安排户外活动：指定补水负责人，控制单次时长，就近备好阴凉与饮用水。",
+            "Parents": "今日安排户外活动：多带水并与学校确认是否有遮阳或错峰安排。",
+            "School Nurses": "今日安排户外活动：活动期间保持联络，预先约定出现不适时的暂停与处置流程。",
+        },
+        "very_hot": {
+            "Teachers": "气温偏高：避免高强度操练，留意退出活动或面色异常的学生。",
+            "Parents": "气温偏高：早餐清淡并适量饮水；放学时问问孩子有无头晕乏力等不适（非诊断）。",
+            "School Nurses": "气温偏高：出现明显不适应尽快转移至阴凉处补水并视情况联系家长（不提供诊断）。",
+        },
     },
 }
 
@@ -498,42 +767,61 @@ def generate_guidance(
     humidity: int,
     uv_index,
     outdoor_activity: bool,
+    lang: str,
 ) -> str:
     """Build explainable, rule-based guidance from risk level and weather flags."""
-    parts = [GUIDANCE_BASE[role][risk]]
+    base = GUIDANCE_BASE[lang][role][risk]
+    addons = GUIDANCE_ADDONS[lang]
+    parts = [base]
 
     uv = _uv_numeric(uv_index)
     if uv is not None and uv > 8:
-        parts.append(GUIDANCE_ADDONS["high_uv"][role])
+        parts.append(addons["high_uv"][role])
     if humidity > 70:
-        parts.append(GUIDANCE_ADDONS["high_humidity"][role])
+        parts.append(addons["high_humidity"][role])
     if outdoor_activity:
-        parts.append(GUIDANCE_ADDONS["outdoor_planned"][role])
+        parts.append(addons["outdoor_planned"][role])
     if temperature >= 35:
-        parts.append(GUIDANCE_ADDONS["very_hot"][role])
+        parts.append(addons["very_hot"][role])
 
     return " ".join(parts)
 
 
-def generate_ai_guidance(context: dict) -> dict[str, str]:
+def generate_ai_guidance(context: dict, lang: str) -> dict[str, str]:
     """Call DeepSeek Chat Completions (OpenAI-compatible). Returns guidance per role."""
     api_key = (os.environ.get("DEEPSEEK_API_KEY") or "").strip()
     if not api_key:
         raise ValueError("DEEPSEEK_API_KEY is not set")
 
-    system = (
-        "You help schools plan for heat in a prototype called HeatSafe Campus. "
-        "Write concise, practical, child-safety-focused advice in English. "
-        "Do not diagnose medical conditions or give clinical treatment instructions. "
-        "Respond with valid JSON only—no markdown fences or extra text."
-    )
+    if lang == "zh":
+        system = (
+            "你是 HeatSafe Campus 校园防暑原型项目的助手。"
+            "请用简体中文撰写简明、可操作、以儿童安全为导向的建议。"
+            "不进行医学诊断，不提供治疗方案。"
+            "仅输出合法 JSON，不要使用 markdown 代码块或其他多余文字。"
+        )
+        lang_instr = (
+            "所有字符串值必须为简体中文；每条建议约 2–4 句。"
+            'JSON 键名必须为英文："Teachers", "Parents", "School Nurses"。'
+        )
+    else:
+        system = (
+            "You help schools plan for heat in a prototype called HeatSafe Campus. "
+            "Write concise, practical, child-safety-focused advice in English. "
+            "Do not diagnose medical conditions or give clinical treatment instructions. "
+            "Respond with valid JSON only—no markdown fences or extra text."
+        )
+        lang_instr = (
+            "Each string value must be English (2–4 short sentences). "
+            'JSON keys must be exactly: "Teachers", "Parents", "School Nurses".'
+        )
+
     user_payload = (
         "Using the following context, produce role-specific guidance.\n\n"
         f"Context:\n{json.dumps(context, indent=2)}\n\n"
-        'Return a single JSON object with exactly these keys and string values '
-        '(each value: 2–4 short sentences):\n'
-        '"Teachers", "Parents", "School Nurses"\n'
-        "Tailor tone to each audience. Be specific to the numbers when helpful."
+        f"{lang_instr}\n"
+        "Tailor tone to teachers, parents, and school nurses respectively. "
+        "Reference numbers from context when helpful."
     )
 
     response = requests.post(
@@ -566,14 +854,15 @@ def generate_ai_guidance(context: dict) -> dict[str, str]:
     }
 
 
-def format_uv(uv_value) -> str:
+def format_uv(uv_value, lang: str) -> str:
+    dash = "—"
     if uv_value is None or (isinstance(uv_value, float) and pd.isna(uv_value)):
-        return "—"
+        return dash
     return f"{float(uv_value):.1f}"
 
 
 st.set_page_config(
-    page_title="HeatSafe Campus",
+    page_title="热浪安全校园 | HeatSafe Campus",
     page_icon="🌤️",
     layout="wide",
 )
@@ -581,37 +870,46 @@ st.set_page_config(
 inject_theme_css()
 
 with st.sidebar:
-    st.markdown("### 🏫 School settings")
-    st.caption("Enter your school and city to assess today's child heat health risk.")
-    school_name = st.text_input("School name", placeholder="e.g. Sunshine Elementary")
-    city = st.text_input("City name", value="Beijing", placeholder="e.g. Beijing, Tokyo, Shanghai")
-    school_type = st.selectbox("School type", SCHOOL_TYPES)
-    outdoor_activity = st.checkbox("Outdoor activity planned today")
-    use_ai_guidance = st.checkbox("Use AI-generated guidance", value=False)
-    st.markdown("---")
-    st.markdown("🌡️ **Climate** · Live weather when available")
-    st.markdown("🏫 **School** · Child-focused risk factors")
-    st.markdown("⚠️ **Safety** · Early warning, not diagnosis")
+    lang_label = st.selectbox(
+        "Language / 语言",
+        options=["中文", "English"],
+        index=0,
+    )
+    lang = LANG_FROM_LABEL[lang_label]
+    T = STRINGS[lang]
 
-st.markdown(
-    """
+    st.markdown(T["sidebar_header"])
+    st.caption(T["sidebar_caption"])
+    school_name = st.text_input(T["school_name"], placeholder=T["school_ph"])
+    city = st.text_input(T["city_name"], value="Beijing", placeholder=T["city_ph"])
+    school_options = [(SCHOOL_TYPE_LABELS[lang][s], s) for s in SCHOOL_TYPES]
+    school_labels = [o[0] for o in school_options]
+    chosen_label = st.selectbox(T["school_type"], school_labels)
+    school_type = next(val for lab, val in school_options if lab == chosen_label)
+    outdoor_activity = st.checkbox(T["outdoor"])
+    use_ai_guidance = st.checkbox(T["use_ai"], value=False)
+    st.markdown("---")
+    st.markdown(T["tip_climate"])
+    st.markdown(T["tip_school"])
+    st.markdown(T["tip_safety"])
+
+hero_html = f"""
     <div class="hero">
-        <h1>🌤️ HeatSafe Campus</h1>
-        <p class="zh">中国校园儿童高温健康风险 AI 预警系统</p>
-        <p class="en">AI-powered heat health early warning system for schools and children.</p>
+        <h1>{T["hero_title"]}</h1>
+        <p class="zh">{T["hero_sub"]}</p>
+        <p class="en">{T["hero_desc"]}</p>
     </div>
-    """,
-    unsafe_allow_html=True,
-)
+    """
+st.markdown(hero_html, unsafe_allow_html=True)
 
 forecast, using_live, location, geocode_failed = load_forecast(city)
 
 if geocode_failed:
-    st.warning("City not found. Falling back to Beijing demo data.")
+    st.warning(T["warn_city"])
 if using_live:
-    st.success("Using live weather data from Open-Meteo.")
+    st.success(T["ok_live"])
 elif not geocode_failed:
-    st.warning("Live weather data unavailable. Using demo mock data.")
+    st.warning(T["warn_mock"])
 
 location_label = format_location(location)
 today = forecast.iloc[0]
@@ -623,50 +921,54 @@ risk_score = calculate_risk_score(max_temp, humidity, school_type, outdoor_activ
 today_risk = risk_level(risk_score)
 risk_style = RISK_STYLES[today_risk]
 
-display_school = school_name.strip() or "Your school"
-data_source = "live Open-Meteo data" if using_live else "demo mock data"
-activity_note = " · Outdoor activity planned" if outdoor_activity else ""
+display_school = school_name.strip() or T["placeholder_school"]
+data_live_key = "ctx_live" if using_live else "ctx_demo"
+data_source = T[data_live_key]
+activity_note = T["ctx_outdoor"] if outdoor_activity else ""
 
 st.markdown(
     f"""
     <div class="context-bar">
         🏫 <strong>{display_school}</strong> &nbsp;·&nbsp;
         📍 {location_label} &nbsp;·&nbsp;
-        {school_type} &nbsp;·&nbsp;
-        Data: {data_source}{activity_note}
+        {SCHOOL_TYPE_LABELS[lang][school_type]} &nbsp;·&nbsp;
+        {T["ctx_data"]}: {data_source}{activity_note}
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-st.markdown('<p class="section-title">📊 Today\'s heat health dashboard</p>', unsafe_allow_html=True)
-render_risk_legend()
+st.markdown(f'<p class="section-title">{T["sec_dash"]}</p>', unsafe_allow_html=True)
+render_risk_legend(lang)
+
+risk_label_long = RISK_LEVEL_LONG[lang][today_risk]
+risk_sub = f"{risk_label_long} · {T['metric_score']} {risk_score}/100"
 
 m1, m2, m3, m4 = st.columns(4)
 with m1:
     render_metric_card(
-        "Risk level",
-        today_risk,
+        T["metric_risk"],
+        RISK_SHORT[lang][today_risk],
         "⚠️",
-        f"{risk_style['label']} · Score {risk_score}/100",
+        risk_sub,
         risk_style["color"],
     )
 with m2:
-    render_metric_card("Temperature", f"{max_temp} °C", "🌡️", "Today's forecast max", "#009EDC")
+    render_metric_card(T["metric_temp"], f"{max_temp} °C", "🌡️", T["metric_temp_sub"], "#009EDC")
 with m3:
-    render_metric_card("Humidity", f"{humidity}%", "💧", "Daily maximum", "#5C9EAD")
+    render_metric_card(T["metric_hum"], f"{humidity}%", "💧", T["metric_hum_sub"], "#5C9EAD")
 with m4:
-    render_metric_card("UV index", format_uv(today_uv), "☀️", "Peak UV today", "#F4A261")
+    render_metric_card(T["metric_uv"], format_uv(today_uv, lang), "☀️", T["metric_uv_sub"], "#F4A261")
 
-st.markdown('<p class="section-title">📈 7-day weather trend</p>', unsafe_allow_html=True)
-forecast_label = "live data" if using_live else "mock data"
-st.caption(f"Temperature and humidity outlook · {forecast_label}")
-st.plotly_chart(build_forecast_chart(forecast), width="stretch")
+st.markdown(f'<p class="section-title">{T["sec_chart"]}</p>', unsafe_allow_html=True)
+forecast_kind = T["chart_live"] if using_live else T["chart_mock"]
+st.caption(f'{T["chart_cap"]} {forecast_kind}')
+st.plotly_chart(build_forecast_chart(forecast, lang), width="stretch")
 
-with st.expander("📋 View detailed 7-day forecast table"):
-    st.dataframe(forecast, width="stretch", hide_index=True)
+with st.expander(T["exp_table"]):
+    st.dataframe(localize_forecast_display(forecast, lang), width="stretch", hide_index=True)
 
-st.markdown('<p class="section-title">👧 Role-specific guidance for child safety</p>', unsafe_allow_html=True)
+st.markdown(f'<p class="section-title">{T["sec_guide"]}</p>', unsafe_allow_html=True)
 
 guidance_context = {
     "school_name": display_school,
@@ -684,31 +986,29 @@ guidance_context = {
     "uv_index": _uv_numeric(today_uv),
     "risk_score": float(risk_score),
     "risk_level": today_risk,
+    "language": "Chinese" if lang == "zh" else "English",
 }
 
 guidance_teachers = generate_guidance(
-    "Teachers", today_risk, max_temp, humidity, today_uv, outdoor_activity
+    "Teachers", today_risk, max_temp, humidity, today_uv, outdoor_activity, lang
 )
 guidance_parents = generate_guidance(
-    "Parents", today_risk, max_temp, humidity, today_uv, outdoor_activity
+    "Parents", today_risk, max_temp, humidity, today_uv, outdoor_activity, lang
 )
 guidance_nurses = generate_guidance(
-    "School Nurses", today_risk, max_temp, humidity, today_uv, outdoor_activity
+    "School Nurses", today_risk, max_temp, humidity, today_uv, outdoor_activity, lang
 )
 
 if use_ai_guidance:
     if not (os.environ.get("DEEPSEEK_API_KEY") or "").strip():
-        st.warning("DeepSeek API key not found. Using rule-based guidance.")
+        st.warning(T["warn_no_key"])
     else:
         try:
-            ai_out = generate_ai_guidance(guidance_context)
+            ai_out = generate_ai_guidance(guidance_context, lang)
             guidance_teachers = ai_out["Teachers"]
             guidance_parents = ai_out["Parents"]
             guidance_nurses = ai_out["School Nurses"]
-            st.caption(
-                "AI-generated guidance (DeepSeek) from today's context. "
-                "Rule-based templates apply if AI is off or unavailable."
-            )
+            st.caption(T["cap_ai_ok"])
         except Exception as exc:
             detail = str(exc)
             if isinstance(exc, requests.HTTPError) and exc.response is not None:
@@ -719,45 +1019,38 @@ if use_ai_guidance:
                         detail = f"{detail}\n\nResponse:\n{snippet}"
                 except Exception:
                     pass
-            st.warning(
-                f"AI guidance unavailable. Using rule-based guidance.\n\n**Debug ({type(exc).__name__}):** {detail}"
-            )
-            st.caption(
-                "Rule-based actions from today's risk level, temperature, humidity, UV, and activity plan."
-            )
+            st.warning(f"{T['warn_ai_fail']}\n\n**Debug ({type(exc).__name__}):** {detail}")
+            st.caption(T["cap_rules"])
 else:
-    st.caption(
-        "Rule-based actions from today's risk level, temperature, humidity, UV, and activity plan."
-    )
+    st.caption(T["cap_rules"])
 
 g1, g2, g3 = st.columns(3)
 with g1:
     render_guide_card(
-        "Teachers",
+        T["role_teachers"],
         "👩‍🏫",
         guidance_teachers,
         "#009EDC",
     )
 with g2:
     render_guide_card(
-        "Parents",
+        T["role_parents"],
         "👨‍👩‍👧",
         guidance_parents,
         "#7CB9A8",
     )
 with g3:
     render_guide_card(
-        "School Nurses",
+        T["role_nurses"],
         "🏥",
         guidance_nurses,
         "#E76F51",
     )
 
 st.markdown(
-    """
+    f"""
     <div class="disclaimer">
-        <strong>Disclaimer:</strong> This tool provides early warning and health education support only.
-        It does not provide medical diagnosis.
+        {T["disclaimer"]}
     </div>
     """,
     unsafe_allow_html=True,
