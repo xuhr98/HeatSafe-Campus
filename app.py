@@ -1,5 +1,9 @@
 """HeatSafe Campus — Streamlit MVP (Open-Meteo + mock fallback)."""
 
+import json
+import os
+import re
+
 import pandas as pd
 import plotly.graph_objects as go
 import requests
@@ -18,6 +22,7 @@ CITY_COORDS = {
 
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
+DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions"
 
 CITY_WEATHER = {
     "Beijing": {"max_temp": 34, "humidity": 45},
@@ -77,11 +82,16 @@ def build_mock_forecast(city_name: str) -> pd.DataFrame:
     mock_uv = [7.2, 8.1, 6.5, 5.0, 7.0, 6.2, 4.8]
     rows = []
     for day in range(7):
+        max_t = round(base["max_temp"] - day * 0.6 + (day % 2) * 0.5, 1)
+        hum = int(max(30, min(95, base["humidity"] + day * 2 - 3)))
+        # Mock “feels like” max when live apparent temp is unavailable
+        apparent = round(max_t + 1.5 + (hum - 50) * 0.035, 1)
         rows.append(
             {
                 "Day": f"Day {day + 1}",
-                "Max Temp (°C)": round(base["max_temp"] - day * 0.6 + (day % 2) * 0.5, 1),
-                "Humidity (%)": int(max(30, min(95, base["humidity"] + day * 2 - 3))),
+                "Max Temp (°C)": max_t,
+                "Apparent temp (°C)": apparent,
+                "Humidity (%)": hum,
                 "UV Index": mock_uv[day],
                 "Conditions": ["Sunny", "Partly cloudy", "Cloudy", "Light rain"][day % 4],
             }
@@ -170,12 +180,14 @@ def fetch_forecast(latitude: float, longitude: float) -> pd.DataFrame:
     rows = []
     for i, date_str in enumerate(daily["time"]):
         max_temp = daily["temperature_2m_max"][i]
+        apparent = daily["apparent_temperature_max"][i]
         humidity = humidity_by_day.get(date_str, 50)
         uv_index = daily["uv_index_max"][i]
         rows.append(
             {
                 "Day": pd.to_datetime(date_str).strftime("%a %d %b"),
                 "Max Temp (°C)": round(max_temp, 1),
+                "Apparent temp (°C)": round(apparent, 1) if apparent is not None else None,
                 "Humidity (%)": humidity,
                 "UV Index": round(uv_index, 1) if uv_index is not None else None,
                 "Conditions": _conditions_label(uv_index),
@@ -503,6 +515,57 @@ def generate_guidance(
     return " ".join(parts)
 
 
+def generate_ai_guidance(context: dict) -> dict[str, str]:
+    """Call DeepSeek Chat Completions (OpenAI-compatible). Returns guidance per role."""
+    api_key = (os.environ.get("DEEPSEEK_API_KEY") or "").strip()
+    if not api_key:
+        raise ValueError("DEEPSEEK_API_KEY is not set")
+
+    system = (
+        "You help schools plan for heat in a prototype called HeatSafe Campus. "
+        "Write concise, practical, child-safety-focused advice in English. "
+        "Do not diagnose medical conditions or give clinical treatment instructions. "
+        "Respond with valid JSON only—no markdown fences or extra text."
+    )
+    user_payload = (
+        "Using the following context, produce role-specific guidance.\n\n"
+        f"Context:\n{json.dumps(context, indent=2)}\n\n"
+        'Return a single JSON object with exactly these keys and string values '
+        '(each value: 2–4 short sentences):\n'
+        '"Teachers", "Parents", "School Nurses"\n'
+        "Tailor tone to each audience. Be specific to the numbers when helpful."
+    )
+
+    response = requests.post(
+        DEEPSEEK_CHAT_URL,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": "deepseek-chat",
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_payload},
+            ],
+            "temperature": 0.35,
+        },
+        timeout=60,
+    )
+    response.raise_for_status()
+    data = response.json()
+    content = data["choices"][0]["message"]["content"].strip()
+    if content.startswith("```"):
+        content = re.sub(r"^```(?:json)?\s*", "", content)
+        content = re.sub(r"\s*```$", "", content)
+    parsed = json.loads(content)
+    return {
+        "Teachers": str(parsed["Teachers"]).strip(),
+        "Parents": str(parsed["Parents"]).strip(),
+        "School Nurses": str(parsed["School Nurses"]).strip(),
+    }
+
+
 def format_uv(uv_value) -> str:
     if uv_value is None or (isinstance(uv_value, float) and pd.isna(uv_value)):
         return "—"
@@ -524,6 +587,7 @@ with st.sidebar:
     city = st.text_input("City name", value="Beijing", placeholder="e.g. Beijing, Tokyo, Shanghai")
     school_type = st.selectbox("School type", SCHOOL_TYPES)
     outdoor_activity = st.checkbox("Outdoor activity planned today")
+    use_ai_guidance = st.checkbox("Use AI-generated guidance", value=False)
     st.markdown("---")
     st.markdown("🌡️ **Climate** · Live weather when available")
     st.markdown("🏫 **School** · Child-focused risk factors")
@@ -554,6 +618,7 @@ today = forecast.iloc[0]
 max_temp = today["Max Temp (°C)"]
 humidity = int(today["Humidity (%)"])
 today_uv = today.get("UV Index")
+apparent_max = today.get("Apparent temp (°C)")
 risk_score = calculate_risk_score(max_temp, humidity, school_type, outdoor_activity)
 today_risk = risk_level(risk_score)
 risk_style = RISK_STYLES[today_risk]
@@ -602,36 +667,89 @@ with st.expander("📋 View detailed 7-day forecast table"):
     st.dataframe(forecast, width="stretch", hide_index=True)
 
 st.markdown('<p class="section-title">👧 Role-specific guidance for child safety</p>', unsafe_allow_html=True)
-st.caption(
-    "Rule-based actions from today's risk level, temperature, humidity, UV, and activity plan."
+
+guidance_context = {
+    "school_name": display_school,
+    "city": location_label,
+    "school_type": school_type,
+    "outdoor_activity_planned": bool(outdoor_activity),
+    "today_max_temperature_c": float(max_temp),
+    "today_apparent_temperature_max_c": (
+        float(apparent_max)
+        if apparent_max is not None
+        and not (isinstance(apparent_max, float) and pd.isna(apparent_max))
+        else None
+    ),
+    "humidity_percent": int(humidity),
+    "uv_index": _uv_numeric(today_uv),
+    "risk_score": float(risk_score),
+    "risk_level": today_risk,
+}
+
+guidance_teachers = generate_guidance(
+    "Teachers", today_risk, max_temp, humidity, today_uv, outdoor_activity
 )
+guidance_parents = generate_guidance(
+    "Parents", today_risk, max_temp, humidity, today_uv, outdoor_activity
+)
+guidance_nurses = generate_guidance(
+    "School Nurses", today_risk, max_temp, humidity, today_uv, outdoor_activity
+)
+
+if use_ai_guidance:
+    if not (os.environ.get("DEEPSEEK_API_KEY") or "").strip():
+        st.warning("DeepSeek API key not found. Using rule-based guidance.")
+    else:
+        try:
+            ai_out = generate_ai_guidance(guidance_context)
+            guidance_teachers = ai_out["Teachers"]
+            guidance_parents = ai_out["Parents"]
+            guidance_nurses = ai_out["School Nurses"]
+            st.caption(
+                "AI-generated guidance (DeepSeek) from today's context. "
+                "Rule-based templates apply if AI is off or unavailable."
+            )
+        except Exception as exc:
+            detail = str(exc)
+            if isinstance(exc, requests.HTTPError) and exc.response is not None:
+                try:
+                    body = exc.response.text.strip()
+                    if body:
+                        snippet = body[:800] + ("…" if len(body) > 800 else "")
+                        detail = f"{detail}\n\nResponse:\n{snippet}"
+                except Exception:
+                    pass
+            st.warning(
+                f"AI guidance unavailable. Using rule-based guidance.\n\n**Debug ({type(exc).__name__}):** {detail}"
+            )
+            st.caption(
+                "Rule-based actions from today's risk level, temperature, humidity, UV, and activity plan."
+            )
+else:
+    st.caption(
+        "Rule-based actions from today's risk level, temperature, humidity, UV, and activity plan."
+    )
 
 g1, g2, g3 = st.columns(3)
 with g1:
     render_guide_card(
         "Teachers",
         "👩‍🏫",
-        generate_guidance(
-            "Teachers", today_risk, max_temp, humidity, today_uv, outdoor_activity
-        ),
+        guidance_teachers,
         "#009EDC",
     )
 with g2:
     render_guide_card(
         "Parents",
         "👨‍👩‍👧",
-        generate_guidance(
-            "Parents", today_risk, max_temp, humidity, today_uv, outdoor_activity
-        ),
+        guidance_parents,
         "#7CB9A8",
     )
 with g3:
     render_guide_card(
         "School Nurses",
         "🏥",
-        generate_guidance(
-            "School Nurses", today_risk, max_temp, humidity, today_uv, outdoor_activity
-        ),
+        guidance_nurses,
         "#E76F51",
     )
 
