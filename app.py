@@ -391,29 +391,116 @@ def build_forecast_chart(forecast: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def guidance_for_role(role: str, risk: str, outdoor: bool) -> str:
-    outdoor_note = " Outdoor activity is planned today — take extra precautions." if outdoor else ""
-    messages = {
-        "Teachers": {
-            "Low": "Normal outdoor schedule is acceptable. Encourage regular water breaks.",
-            "Moderate": "Shorten active play time and increase shade breaks. Watch for fatigue.",
-            "High": "Prefer indoor activities or shaded areas. Schedule hydration every 20 minutes.",
-            "Extreme": "Cancel or postpone outdoor PE and assemblies. Monitor students closely.",
-        },
-        "Parents": {
-            "Low": "Light clothing and a water bottle are sufficient for today.",
-            "Moderate": "Remind children to drink water before and after school.",
-            "High": "Consider pickup earlier if possible; avoid extra outdoor play after school.",
-            "Extreme": "Keep children indoors during peak heat. Seek cool spaces and hydration.",
-        },
-        "School Nurses": {
-            "Low": "Routine heat awareness. Ensure drinking water stations are available.",
-            "Moderate": "Review heat illness signs with staff. Keep oral rehydration available.",
-            "High": "Increase monitoring during recess. Prepare cool rest area and first aid.",
-            "Extreme": "Activate heat response checklist. Watch for dizziness, nausea, or confusion.",
-        },
-    }
-    return messages[role][risk] + outdoor_note
+# Rule-based guidance: base text per risk level + optional weather/activity add-ons.
+GUIDANCE_BASE = {
+    "Teachers": {
+        "Low": (
+            "Level 1 (Low): Usual outdoor classes and recess are fine. "
+            "Remind students to drink water at breaks and watch for normal tiredness."
+        ),
+        "Moderate": (
+            "Level 2 (Moderate): Shorten high-intensity games and add shade breaks every 25–30 minutes. "
+            "Keep drinking water visible in the classroom before afternoon sessions."
+        ),
+        "High": (
+            "Level 3 (High): Move PE and assemblies to shaded or indoor areas where possible. "
+            "Schedule a hydration pause every 20 minutes and reduce running drills."
+        ),
+        "Extreme": (
+            "Level 4 (Extreme): Postpone or cancel outdoor PE, sports day, and long assemblies. "
+            "Keep children in cool indoor spaces and check on them during transitions."
+        ),
+    },
+    "Parents": {
+        "Low": (
+            "Level 1 (Low): Send your child with a full water bottle and breathable clothing. "
+            "Normal school routines are appropriate for today's conditions."
+        ),
+        "Moderate": (
+            "Level 2 (Moderate): Pack extra water and a light hat. "
+            "Ask your child to drink before leaving home and again when they return."
+        ),
+        "High": (
+            "Level 3 (High): Choose loose, light-coloured clothes and two water bottles if possible. "
+            "Avoid extra outdoor play right after school; offer a cool drink and rest indoors."
+        ),
+        "Extreme": (
+            "Level 4 (Extreme): Limit time outdoors before and after school during peak heat. "
+            "Ensure your child rests in a cool place and drinks water regularly through the day."
+        ),
+    },
+    "School Nurses": {
+        "Low": (
+            "Level 1 (Low): Confirm drinking water is available in corridors and playgrounds. "
+            "Share routine heat-awareness tips with staff—no escalation needed today."
+        ),
+        "Moderate": (
+            "Level 2 (Moderate): Brief teachers on early signs of heat discomfort (flushing, headache, thirst). "
+            "Stock oral rehydration and rest space for any student who feels unwell."
+        ),
+        "High": (
+            "Level 3 (High): Increase visibility during recess; note students who sit out or appear sluggish. "
+            "Prepare a cool rest area, fluids, and contact protocol if a child does not recover quickly."
+        ),
+        "Extreme": (
+            "Level 4 (Extreme): Activate your school heat-response checklist and coordinate with leadership. "
+            "Monitor high-risk students closely and support staff with clear rest-and-hydration rules."
+        ),
+    },
+}
+
+GUIDANCE_ADDONS = {
+    "high_uv": {
+        "Teachers": "UV is very high: plan activities before 10 a.m. or after 4 p.m., require hats, and use shaded areas.",
+        "Parents": "UV is very high: apply sunscreen, send a wide-brim hat, and avoid long sun exposure after school.",
+        "School Nurses": "UV is very high: remind staff about sun protection and watch for sun-related discomfort on exposed skin.",
+    },
+    "high_humidity": {
+        "Teachers": "Humidity is elevated: heat feels stronger—slow active games and allow more recovery time in shade.",
+        "Parents": "Humidity is elevated: encourage frequent small sips of water; sweaty clothes dry more slowly today.",
+        "School Nurses": "Humidity is elevated: combine heat and moisture increases strain—prioritize cooling breaks and fluids.",
+    },
+    "outdoor_planned": {
+        "Teachers": "Outdoor activity is scheduled: assign a hydration leader, cap session length, and keep shade and water nearby.",
+        "Parents": "Outdoor activity is scheduled: send extra water and confirm the school has shade or adjusted timing.",
+        "School Nurses": "Outdoor activity is scheduled: be available during the session and review the plan for heat-related stops.",
+    },
+    "very_hot": {
+        "Teachers": f"Temperature is high: avoid strenuous drills and watch for students who stop participating or look unwell.",
+        "Parents": "Temperature is high: a light meal and water before school help; check in on how your child feels at pickup.",
+        "School Nurses": "Temperature is high: treat heat discomfort seriously—move the child to cool space and notify guardians if needed.",
+    },
+}
+
+
+def _uv_numeric(uv_index) -> float | None:
+    if uv_index is None or (isinstance(uv_index, float) and pd.isna(uv_index)):
+        return None
+    return float(uv_index)
+
+
+def generate_guidance(
+    role: str,
+    risk: str,
+    temperature: float,
+    humidity: int,
+    uv_index,
+    outdoor_activity: bool,
+) -> str:
+    """Build explainable, rule-based guidance from risk level and weather flags."""
+    parts = [GUIDANCE_BASE[role][risk]]
+
+    uv = _uv_numeric(uv_index)
+    if uv is not None and uv > 8:
+        parts.append(GUIDANCE_ADDONS["high_uv"][role])
+    if humidity > 70:
+        parts.append(GUIDANCE_ADDONS["high_humidity"][role])
+    if outdoor_activity:
+        parts.append(GUIDANCE_ADDONS["outdoor_planned"][role])
+    if temperature >= 35:
+        parts.append(GUIDANCE_ADDONS["very_hot"][role])
+
+    return " ".join(parts)
 
 
 def format_uv(uv_value) -> str:
@@ -515,28 +602,36 @@ with st.expander("📋 View detailed 7-day forecast table"):
     st.dataframe(forecast, width="stretch", hide_index=True)
 
 st.markdown('<p class="section-title">👧 Role-specific guidance for child safety</p>', unsafe_allow_html=True)
-st.caption("Practical actions tailored to today's risk level and school context.")
+st.caption(
+    "Rule-based actions from today's risk level, temperature, humidity, UV, and activity plan."
+)
 
 g1, g2, g3 = st.columns(3)
 with g1:
     render_guide_card(
         "Teachers",
         "👩‍🏫",
-        guidance_for_role("Teachers", today_risk, outdoor_activity),
+        generate_guidance(
+            "Teachers", today_risk, max_temp, humidity, today_uv, outdoor_activity
+        ),
         "#009EDC",
     )
 with g2:
     render_guide_card(
         "Parents",
         "👨‍👩‍👧",
-        guidance_for_role("Parents", today_risk, outdoor_activity),
+        generate_guidance(
+            "Parents", today_risk, max_temp, humidity, today_uv, outdoor_activity
+        ),
         "#7CB9A8",
     )
 with g3:
     render_guide_card(
         "School Nurses",
         "🏥",
-        guidance_for_role("School Nurses", today_risk, outdoor_activity),
+        generate_guidance(
+            "School Nurses", today_risk, max_temp, humidity, today_uv, outdoor_activity
+        ),
         "#E76F51",
     )
 
