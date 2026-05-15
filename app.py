@@ -1,5 +1,7 @@
 """HeatSafe Campus — Streamlit MVP (Open-Meteo + mock fallback)."""
 
+import folium
+import html
 import json
 import math
 import os
@@ -10,6 +12,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
+from streamlit_folium import st_folium
 from plotly.subplots import make_subplots
 
 SCHOOL_TYPES = ["Kindergarten", "Primary School", "Middle School"]
@@ -137,6 +140,8 @@ STRINGS = {
         "chart_legend_hum": "相对湿度 (%)",
         "chart_y_temp": "气温 (°C)",
         "chart_y_hum": "相对湿度 (%)",
+        "sec_map": "学校位置地图",
+        "map_unavailable": "当前无法显示学校位置地图。成功通过高德地图定位学校后即可查看。",
     },
     "en": {
         "sidebar_header": "### 🏫 School settings",
@@ -204,6 +209,8 @@ STRINGS = {
         "chart_legend_hum": "Humidity (%)",
         "chart_y_temp": "Temperature (°C)",
         "chart_y_hum": "Humidity (%)",
+        "sec_map": "School Location Map",
+        "map_unavailable": "School location map is unavailable. Resolve the school with Amap to view the map.",
     },
 }
 
@@ -1080,6 +1087,42 @@ def optional_float(cell) -> float | None:
         return None
 
 
+def render_school_location_map(
+    lang: str,
+    amap_ok: bool,
+    location: dict,
+    school_label: str,
+    formatted_address: str | None,
+) -> None:
+    """Folium map centered on Amap coordinates; info message if unavailable."""
+    T = STRINGS[lang]
+    st.markdown(f'<p class="section-title">{T["sec_map"]}</p>', unsafe_allow_html=True)
+    if not amap_ok:
+        st.info(T["map_unavailable"])
+        return
+
+    lat = location.get("latitude")
+    lon = location.get("longitude")
+    if lat is None or lon is None:
+        st.info(T["map_unavailable"])
+        return
+
+    addr = (formatted_address or "").strip() or format_location(location)
+    popup_html = (
+        "<div style='min-width:160px;'>"
+        f"<b>{html.escape(school_label)}</b><br>"
+        f"{html.escape(addr)}"
+        "</div>"
+    )
+    fmap = folium.Map(location=[float(lat), float(lon)], zoom_start=15, tiles="OpenStreetMap")
+    folium.Marker(
+        location=[float(lat), float(lon)],
+        tooltip=school_label,
+        popup=folium.Popup(popup_html, max_width=320),
+    ).add_to(fmap)
+    st_folium(fmap, height=380, use_container_width=True)
+
+
 st.set_page_config(
     page_title="热浪安全校园 | HeatSafe Campus",
     page_icon="🌤️",
@@ -1143,6 +1186,16 @@ elif not geocode_failed:
 if not air_quality_ok:
     st.warning(T["warn_aq"])
 
+display_school = school_name.strip() or T["placeholder_school"]
+
+render_school_location_map(
+    lang,
+    location_meta.get("amap_ok", False),
+    location,
+    display_school,
+    location_meta.get("formatted_address"),
+)
+
 location_label = format_location(location)
 today = forecast.iloc[0]
 max_temp = today["Max Temp (°C)"]
@@ -1157,7 +1210,6 @@ risk_score = calculate_risk_score(
 today_risk = risk_level(risk_score)
 risk_style = RISK_STYLES[today_risk]
 
-display_school = school_name.strip() or T["placeholder_school"]
 data_live_key = "ctx_live" if using_live else "ctx_demo"
 data_source = T[data_live_key]
 activity_note = T["ctx_outdoor"] if outdoor_activity else ""
