@@ -1,8 +1,10 @@
 """HeatSafe Campus — Streamlit MVP (Open-Meteo + mock fallback)."""
 
 import json
+import math
 import os
 import re
+from datetime import date, timedelta
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -21,6 +23,7 @@ CITY_COORDS = {
 }
 
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
+AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions"
 
@@ -90,6 +93,7 @@ STRINGS = {
         "warn_city": "未找到城市，已改用北京演示数据。",
         "ok_live": "正在使用 Open-Meteo 实时天气数据。",
         "warn_mock": "无法获取实时天气，使用演示模拟数据。",
+        "warn_aq": "Open-Meteo 空气质量接口不可用，正在继续使用不含空气质量因子的预警。",
         "warn_no_key": "未检测到 DeepSeek API 密钥，改用规则模板建议。",
         "warn_ai_fail": "AI 建议不可用，改用规则模板建议。",
         "ctx_data": "数据",
@@ -105,6 +109,10 @@ STRINGS = {
         "metric_temp_sub": "今日预报最高气温",
         "metric_hum_sub": "日最高相对湿度",
         "metric_uv_sub": "今日紫外线峰值",
+        "metric_aqi": "US AQI",
+        "metric_pm25": "PM2.5",
+        "metric_aqi_sub": "当日小时最大值（美国 AQI）",
+        "metric_pm25_sub": "当日最大浓度（µg/m³）",
         "metric_score": "得分",
         "sec_chart": "📈 七日天气趋势",
         "chart_cap": "气温与湿度展望 ·",
@@ -113,7 +121,7 @@ STRINGS = {
         "exp_table": "📋 查看七日预报明细表",
         "sec_guide": "👧 分角色儿童安全建议",
         "cap_ai_ok": "基于今日上下文由 DeepSeek 生成的建议。关闭 AI 或请求失败时使用规则模板。",
-        "cap_rules": "基于今日风险等级、气温、湿度、紫外线与活动安排的规则建议。",
+        "cap_rules": "基于今日风险等级、气温、湿度、紫外线、空气质量（若可用）与活动安排的规则建议。",
         "role_teachers": "教师",
         "role_parents": "家长",
         "role_nurses": "校医",
@@ -146,6 +154,7 @@ STRINGS = {
         "warn_city": "City not found. Falling back to Beijing demo data.",
         "ok_live": "Using live weather data from Open-Meteo.",
         "warn_mock": "Live weather data unavailable. Using demo mock data.",
+        "warn_aq": "Air Quality API unavailable. Continuing without air quality in the risk score.",
         "warn_no_key": "DeepSeek API key not found. Using rule-based guidance.",
         "warn_ai_fail": "AI guidance unavailable. Using rule-based guidance.",
         "ctx_data": "Data",
@@ -161,6 +170,10 @@ STRINGS = {
         "metric_temp_sub": "Today's forecast max",
         "metric_hum_sub": "Daily maximum",
         "metric_uv_sub": "Peak UV today",
+        "metric_aqi": "US AQI",
+        "metric_pm25": "PM2.5",
+        "metric_aqi_sub": "Daily max (hourly)",
+        "metric_pm25_sub": "Daily max concentration (µg/m³)",
         "metric_score": "Score",
         "sec_chart": "📈 7-day weather trend",
         "chart_cap": "Temperature and humidity outlook ·",
@@ -170,7 +183,8 @@ STRINGS = {
         "sec_guide": "👧 Role-specific guidance for child safety",
         "cap_ai_ok": "AI-generated guidance (DeepSeek) from today's context. "
         "Rule-based templates apply if AI is off or unavailable.",
-        "cap_rules": "Rule-based actions from today's risk level, temperature, humidity, UV, and activity plan.",
+        "cap_rules": "Rule-based actions from today's risk level, temperature, humidity, UV, "
+        "air quality (when available), and activity plan.",
         "role_teachers": "Teachers",
         "role_parents": "Parents",
         "role_nurses": "School Nurses",
@@ -194,6 +208,10 @@ FORECAST_COLUMN_NAMES = {
         "Humidity (%)": "相对湿度 (%)",
         "UV Index": "紫外线指数",
         "Conditions": "天气状况",
+        "US AQI (max)": "US AQI（日最大）",
+        "PM2.5 max (µg/m³)": "PM2.5 日最大（µg/m³）",
+        "PM10 max (µg/m³)": "PM10 日最大（µg/m³）",
+        "Ozone max (µg/m³)": "臭氧日最大（µg/m³）",
     },
 }
 
@@ -209,6 +227,7 @@ CONDITION_LABELS_ZH = {
 
 def localize_forecast_display(df: pd.DataFrame, lang: str) -> pd.DataFrame:
     """Rename columns / condition strings for display only."""
+    df = df.drop(columns=["ISO date"], errors="ignore")
     if lang == "en":
         return df
     out = df.rename(columns=FORECAST_COLUMN_NAMES["zh"])
@@ -272,13 +291,16 @@ def build_mock_forecast(city_name: str) -> pd.DataFrame:
     base = CITY_WEATHER[_mock_city_key(city_name)]
     mock_uv = [7.2, 8.1, 6.5, 5.0, 7.0, 6.2, 4.8]
     rows = []
+    today = date.today()
     for day in range(7):
         max_t = round(base["max_temp"] - day * 0.6 + (day % 2) * 0.5, 1)
         hum = int(max(30, min(95, base["humidity"] + day * 2 - 3)))
         # Mock “feels like” max when live apparent temp is unavailable
         apparent = round(max_t + 1.5 + (hum - 50) * 0.035, 1)
+        iso_d = (today + timedelta(days=day)).isoformat()
         rows.append(
             {
+                "ISO date": iso_d,
                 "Day": f"Day {day + 1}",
                 "Max Temp (°C)": max_t,
                 "Apparent temp (°C)": apparent,
@@ -376,6 +398,7 @@ def fetch_forecast(latitude: float, longitude: float) -> pd.DataFrame:
         uv_index = daily["uv_index_max"][i]
         rows.append(
             {
+                "ISO date": date_str,
                 "Day": pd.to_datetime(date_str).strftime("%a %d %b"),
                 "Max Temp (°C)": round(max_temp, 1),
                 "Apparent temp (°C)": round(apparent, 1) if apparent is not None else None,
@@ -385,6 +408,88 @@ def fetch_forecast(latitude: float, longitude: float) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows)
+
+
+AQ_COL_PM25 = "PM2.5 max (µg/m³)"
+AQ_COL_PM10 = "PM10 max (µg/m³)"
+AQ_COL_OZONE = "Ozone max (µg/m³)"
+AQ_COL_US_AQI = "US AQI (max)"
+
+
+def _aggregate_air_quality_hourly_to_daily(payload: dict) -> dict[str, dict[str, float]]:
+    """Map calendar date (YYYY-MM-DD) -> daily maximum per pollutant."""
+    hourly = payload.get("hourly") or {}
+    times = hourly.get("time") or []
+    if not times:
+        return {}
+
+    vars_track = ["pm2_5", "pm10", "ozone", "us_aqi"]
+    daily: dict[str, dict[str, float]] = {}
+
+    for var in vars_track:
+        series = hourly.get(var)
+        if series is None:
+            continue
+        for t_str, val in zip(times, series):
+            if val is None:
+                continue
+            day_key = t_str[:10]
+            bucket = daily.setdefault(day_key, {})
+            prev = bucket.get(var)
+            if prev is None or float(val) > prev:
+                bucket[var] = float(val)
+
+    return daily
+
+
+def merge_air_quality_into_forecast(df: pd.DataFrame, latitude: float, longitude: float) -> tuple[pd.DataFrame, bool]:
+    """Attach daily-max air quality columns aligned by ISO date. Returns (df, ok)."""
+    out = df.copy()
+    try:
+        response = requests.get(
+            AIR_QUALITY_URL,
+            params={
+                "latitude": latitude,
+                "longitude": longitude,
+                "hourly": "pm2_5,pm10,ozone,us_aqi",
+                "timezone": "auto",
+                "forecast_days": 7,
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception:
+        return out, False
+
+    daily_maps = _aggregate_air_quality_hourly_to_daily(payload)
+    if not daily_maps:
+        return out, False
+
+    if "ISO date" not in out.columns:
+        return out, False
+
+    out[AQ_COL_PM25] = math.nan
+    out[AQ_COL_PM10] = math.nan
+    out[AQ_COL_OZONE] = math.nan
+    out[AQ_COL_US_AQI] = math.nan
+
+    for idx in range(len(out)):
+        dk = str(out.iloc[idx]["ISO date"])[:10]
+        dm = daily_maps.get(dk)
+        if not dm:
+            continue
+        if "pm2_5" in dm:
+            out.loc[out.index[idx], AQ_COL_PM25] = round(dm["pm2_5"], 1)
+        if "pm10" in dm:
+            out.loc[out.index[idx], AQ_COL_PM10] = round(dm["pm10"], 1)
+        if "ozone" in dm:
+            out.loc[out.index[idx], AQ_COL_OZONE] = round(dm["ozone"], 1)
+        if "us_aqi" in dm:
+            out.loc[out.index[idx], AQ_COL_US_AQI] = round(dm["us_aqi"], 1)
+
+    out = out.drop(columns=["ISO date"], errors="ignore")
+    return out, True
 
 
 def get_live_weather(city_name: str) -> pd.DataFrame:
@@ -437,12 +542,15 @@ def calculate_risk_score(
     humidity: int,
     school_type: str,
     outdoor_activity: bool,
+    us_aqi: float | None = None,
 ) -> float:
     temp_component = max(0, (max_temp - 28) * 4)
     humidity_component = max(0, (humidity - 60) * 0.5)
     score = (temp_component + humidity_component) * SCHOOL_TYPE_FACTOR[school_type]
     if outdoor_activity:
         score *= 1.12
+    if us_aqi is not None and us_aqi >= 100:
+        score += 10
     return round(min(100, score), 1)
 
 
@@ -854,11 +962,33 @@ def generate_ai_guidance(context: dict, lang: str) -> dict[str, str]:
     }
 
 
-def format_uv(uv_value, lang: str) -> str:
+def format_uv(uv_value, _lang: str = "en") -> str:
     dash = "—"
     if uv_value is None or (isinstance(uv_value, float) and pd.isna(uv_value)):
         return dash
     return f"{float(uv_value):.1f}"
+
+
+def format_air_metric(value) -> str:
+    dash = "—"
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return dash
+    try:
+        x = float(value)
+    except (TypeError, ValueError):
+        return dash
+    if abs(x - round(x)) < 1e-6:
+        return str(int(round(x)))
+    return f"{x:.1f}"
+
+
+def optional_float(cell) -> float | None:
+    if cell is None or (isinstance(cell, float) and pd.isna(cell)):
+        return None
+    try:
+        return float(cell)
+    except (TypeError, ValueError):
+        return None
 
 
 st.set_page_config(
@@ -903,6 +1033,9 @@ hero_html = f"""
 st.markdown(hero_html, unsafe_allow_html=True)
 
 forecast, using_live, location, geocode_failed = load_forecast(city)
+forecast, air_quality_ok = merge_air_quality_into_forecast(
+    forecast, location["latitude"], location["longitude"]
+)
 
 if geocode_failed:
     st.warning(T["warn_city"])
@@ -910,6 +1043,8 @@ if using_live:
     st.success(T["ok_live"])
 elif not geocode_failed:
     st.warning(T["warn_mock"])
+if not air_quality_ok:
+    st.warning(T["warn_aq"])
 
 location_label = format_location(location)
 today = forecast.iloc[0]
@@ -917,7 +1052,11 @@ max_temp = today["Max Temp (°C)"]
 humidity = int(today["Humidity (%)"])
 today_uv = today.get("UV Index")
 apparent_max = today.get("Apparent temp (°C)")
-risk_score = calculate_risk_score(max_temp, humidity, school_type, outdoor_activity)
+today_us_aqi = optional_float(today.get(AQ_COL_US_AQI))
+today_pm25 = optional_float(today.get(AQ_COL_PM25))
+risk_score = calculate_risk_score(
+    max_temp, humidity, school_type, outdoor_activity, us_aqi=today_us_aqi
+)
 today_risk = risk_level(risk_score)
 risk_style = RISK_STYLES[today_risk]
 
@@ -944,7 +1083,7 @@ render_risk_legend(lang)
 risk_label_long = RISK_LEVEL_LONG[lang][today_risk]
 risk_sub = f"{risk_label_long} · {T['metric_score']} {risk_score}/100"
 
-m1, m2, m3, m4 = st.columns(4)
+m1, m2, m3, m4, m5, m6 = st.columns(6)
 with m1:
     render_metric_card(
         T["metric_risk"],
@@ -959,6 +1098,22 @@ with m3:
     render_metric_card(T["metric_hum"], f"{humidity}%", "💧", T["metric_hum_sub"], "#5C9EAD")
 with m4:
     render_metric_card(T["metric_uv"], format_uv(today_uv, lang), "☀️", T["metric_uv_sub"], "#F4A261")
+with m5:
+    render_metric_card(
+        T["metric_aqi"],
+        format_air_metric(today.get(AQ_COL_US_AQI)),
+        "🌫️",
+        T["metric_aqi_sub"],
+        "#6B5B95",
+    )
+with m6:
+    render_metric_card(
+        T["metric_pm25"],
+        format_air_metric(today.get(AQ_COL_PM25)),
+        "😷",
+        T["metric_pm25_sub"],
+        "#8E7CC3",
+    )
 
 st.markdown(f'<p class="section-title">{T["sec_chart"]}</p>', unsafe_allow_html=True)
 forecast_kind = T["chart_live"] if using_live else T["chart_mock"]
@@ -987,6 +1142,8 @@ guidance_context = {
     "risk_score": float(risk_score),
     "risk_level": today_risk,
     "language": "Chinese" if lang == "zh" else "English",
+    "us_aqi_daily_max": today_us_aqi,
+    "pm25_daily_max_ug_m3": today_pm25,
 }
 
 guidance_teachers = generate_guidance(
