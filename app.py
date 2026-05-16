@@ -25,6 +25,36 @@ CITY_COORDS = {
     "Shenzhen": (22.5431, 114.0579),
 }
 
+# Chinese → ASCII names for Open-Meteo geocoding (Amap uses the user-entered city string).
+CITY_NAME_ALIASES = {
+    "北京": "Beijing",
+    "上海": "Shanghai",
+    "广州": "Guangzhou",
+    "深圳": "Shenzhen",
+    "杭州": "Hangzhou",
+    "成都": "Chengdu",
+    "重庆": "Chongqing",
+    "南京": "Nanjing",
+    "武汉": "Wuhan",
+    "西安": "Xi'an",
+    "天津": "Tianjin",
+    "苏州": "Suzhou",
+    "青岛": "Qingdao",
+    "厦门": "Xiamen",
+    "长沙": "Changsha",
+    "郑州": "Zhengzhou",
+    "昆明": "Kunming",
+    "沈阳": "Shenyang",
+    "大连": "Dalian",
+    "哈尔滨": "Harbin",
+}
+
+
+def normalize_city_name(city_name: str) -> str:
+    """Strip whitespace; map known Chinese labels to English for Open-Meteo APIs."""
+    s = city_name.strip()
+    return CITY_NAME_ALIASES.get(s, s)
+
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
@@ -556,7 +586,10 @@ def merge_air_quality_into_forecast(df: pd.DataFrame, latitude: float, longitude
 
 
 def get_live_weather(city_name: str) -> pd.DataFrame:
-    location = geocode_city(city_name)
+    q = normalize_city_name((city_name or "").strip() or FALLBACK_CITY)
+    if len(q) < 2:
+        q = FALLBACK_CITY
+    location = geocode_city(q)
     return fetch_forecast(location["latitude"], location["longitude"])
 
 
@@ -571,11 +604,21 @@ def load_forecast(
 ) -> tuple[pd.DataFrame, bool, dict, bool, dict]:
     """
     Load 7-day forecast. Tries Amap school geocode when AMAP_API_KEY and school name exist;
-    otherwise uses Open-Meteo city geocoding. Returns (df, using_live, location, geocode_failed, meta).
+    otherwise uses Open-Meteo city geocoding (normalize_city_name for Chinese city names).
     """
-    city_input = (city_name or "").strip() or FALLBACK_CITY
+    city_original = (city_name or "").strip()
+    city_openmeteo = normalize_city_name(city_original or FALLBACK_CITY)
+    if len(city_openmeteo) < 2:
+        city_openmeteo = FALLBACK_CITY
+    city_for_amap = city_original or FALLBACK_CITY
+
     geocode_failed = False
-    meta: dict = {"amap_ok": False, "amap_fail": False, "formatted_address": None}
+    meta: dict = {
+        "amap_ok": False,
+        "amap_fail": False,
+        "formatted_address": None,
+        "city_display": city_original,
+    }
 
     amap_key = (os.environ.get("AMAP_API_KEY") or "").strip()
     school_trim = (school_name or "").strip()
@@ -583,12 +626,12 @@ def load_forecast(
     location: dict | None = None
     if amap_key and school_trim:
         try:
-            amap_loc = geocode_school_with_amap(school_trim, city_input)
+            amap_loc = geocode_school_with_amap(school_trim, city_for_amap)
             fa = amap_loc["formatted_address"]
             location = {
                 "latitude": amap_loc["latitude"],
                 "longitude": amap_loc["longitude"],
-                "display_name": fa or f"{school_trim}, {city_input}",
+                "display_name": fa or f"{school_trim}, {city_for_amap}",
                 "country": "",
                 "source": "Amap",
                 "formatted_address": fa,
@@ -600,7 +643,7 @@ def load_forecast(
 
     if location is None:
         try:
-            location = geocode_city(city_input)
+            location = geocode_city(city_openmeteo)
             location.setdefault("source", "Open-Meteo")
             location.setdefault("formatted_address", None)
         except Exception:
@@ -619,7 +662,7 @@ def load_forecast(
         df = fetch_forecast(location["latitude"], location["longitude"])
         return df, True, location, geocode_failed, meta
     except Exception:
-        mock_city = FALLBACK_CITY if geocode_failed else _mock_city_key(city_input)
+        mock_city = FALLBACK_CITY if geocode_failed else _mock_city_key(city_openmeteo)
         return build_mock_forecast(mock_city), False, location, geocode_failed, meta
 
 
@@ -1144,6 +1187,10 @@ with st.sidebar:
     st.caption(T["sidebar_caption"])
     school_name = st.text_input(T["school_name"], placeholder=T["school_ph"])
     city = st.text_input(T["city_name"], value="Beijing", placeholder=T["city_ph"])
+    st.caption(
+        "中文界面支持中文城市名，例如：北京、上海、广州。\n"
+        "English city names are also supported."
+    )
     school_options = [(SCHOOL_TYPE_LABELS[lang][s], s) for s in SCHOOL_TYPES]
     school_labels = [o[0] for o in school_options]
     chosen_label = st.selectbox(T["school_type"], school_labels)
@@ -1196,7 +1243,12 @@ render_school_location_map(
     location_meta.get("formatted_address"),
 )
 
-location_label = format_location(location)
+city_disp = (location_meta.get("city_display") or "").strip()
+loc_fmt = format_location(location)
+if city_disp and normalize_city_name(city_disp) != city_disp:
+    location_label = f"{city_disp} · {loc_fmt}"
+else:
+    location_label = loc_fmt
 today = forecast.iloc[0]
 max_temp = today["Max Temp (°C)"]
 humidity = int(today["Humidity (%)"])
