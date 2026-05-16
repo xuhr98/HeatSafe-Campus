@@ -12,6 +12,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_folium import st_folium
 from plotly.subplots import make_subplots
 
@@ -176,6 +177,11 @@ STRINGS = {
         "chart_mock": "模拟",
         "exp_table": "📋 查看七日预报明细表",
         "sec_guide": "👧 分角色儿童安全建议",
+        "sec_parent_notice": "📢 家校通知一键生成",
+        "parent_notice_label": "通知正文",
+        "copy_notice": "复制通知",
+        "copy_notice_ok": "已复制到剪贴板，可直接粘贴至家长群。",
+        "notice_disclaimer": "本通知仅用于学校健康提醒参考，不构成医疗建议。",
         "cap_ai_ok": "基于今日上下文由 DeepSeek 生成的建议。关闭 AI 或请求失败时使用规则模板。",
         "cap_rules": "基于今日风险等级、10:00–16:00 白天平均气温/湿度/紫外线/空气质量（若可用）与活动安排的规则建议。",
         "role_teachers": "教师",
@@ -262,6 +268,13 @@ STRINGS = {
         "chart_mock": "mock data",
         "exp_table": "📋 View detailed 7-day forecast table",
         "sec_guide": "👧 Role-specific guidance for child safety",
+        "sec_parent_notice": "📢 Parent Notice Generator",
+        "parent_notice_label": "Notice text",
+        "copy_notice": "Copy Notice",
+        "copy_notice_ok": "Copied to clipboard — paste into your parent group or messaging app.",
+        "notice_disclaimer": (
+            "This notice is for school health awareness only and does not constitute medical advice."
+        ),
         "cap_ai_ok": "AI-generated guidance (DeepSeek) from today's context. "
         "Rule-based templates apply if AI is off or unavailable.",
         "cap_rules": "Rule-based actions from today's risk level, 10:00–16:00 daytime-average "
@@ -1234,6 +1247,171 @@ def generate_guidance(
     return " ".join(parts)
 
 
+PARENT_NOTICE_ACTIONS = {
+    "zh": {
+        "Low": (
+            "目前气候条件总体适宜正常到校与课间活动。请为孩子准备足量温水、透气衣物，"
+            "并提醒课间及时补水，关注是否有口渴、疲倦等一般不适表现。"
+        ),
+        "Moderate": (
+            "今日体感偏闷热，请为孩子多备饮水，穿着透气浅色衣物，并佩戴遮阳帽。"
+            "建议减少放学后在烈日下的长时间停留，回家后及时补水、在阴凉处休息。"
+        ),
+        "High": (
+            "今日高温风险较高，请家长配合学校合理安排作息：尽量避免高强度户外活动，"
+            "关注孩子是否有面红、头痛、恶心、精神不振等情况；如有明显不适，请及时与班主任联系。"
+        ),
+        "Extreme": (
+            "今日高温风险极高，请家长务必重视：减少不必要外出，确保孩子全天规律饮水，"
+            "尽量待在凉爽通风环境。如学校调整户外活动或体育课安排，请以班级通知为准，"
+            "并随时关注孩子身体状况，有异常及时联系学校。"
+        ),
+    },
+    "en": {
+        "Low": (
+            "Conditions are generally suitable for normal attendance and recess. "
+            "Please send a full water bottle, breathable clothing, and remind your child "
+            "to drink regularly and tell an adult if they feel unusually tired or thirsty."
+        ),
+        "Moderate": (
+            "It will feel warm and humid today. Pack extra water, light-coloured clothing, "
+            "and a hat. Limit prolonged sun exposure after school and encourage rest in a cool place."
+        ),
+        "High": (
+            "Heat risk is elevated today. Please support the school’s adjusted routines, "
+            "avoid strenuous outdoor play when possible, and watch for flushing, headache, "
+            "dizziness, or unusual fatigue. Contact the homeroom teacher if your child feels unwell."
+        ),
+        "Extreme": (
+            "Extreme heat risk today. Minimize unnecessary outdoor time, ensure regular hydration, "
+            "and keep your child in a cool, ventilated space. Follow any class-level changes to PE "
+            "or outdoor events, and contact the school promptly if your child shows significant discomfort."
+        ),
+    },
+}
+
+
+def _parent_notice_weather_block(
+    lang: str,
+    max_temp: float,
+    apparent_temp: float | None,
+    humidity: int,
+    us_aqi: float | None,
+) -> str:
+    if lang == "zh":
+        lines = [
+            f"· 日最高气温：{max_temp:.1f}℃",
+        ]
+        if apparent_temp is not None:
+            lines.append(f"· 体感温度：{apparent_temp:.1f}℃")
+        else:
+            lines.append("· 体感温度：暂无")
+        lines.append(f"· 相对湿度：{humidity}%")
+        if us_aqi is not None:
+            lines.append(f"· 空气质量（US AQI）：{int(round(us_aqi))}")
+        return "\n".join(lines)
+
+    lines = [
+        f"· Forecast max temperature: {max_temp:.1f}°C",
+    ]
+    if apparent_temp is not None:
+        lines.append(f"· Apparent (feels-like) temperature: {apparent_temp:.1f}°C")
+    else:
+        lines.append("· Apparent (feels-like) temperature: not available")
+    lines.append(f"· Relative humidity: {humidity}%")
+    if us_aqi is not None:
+        lines.append(f"· Air quality (US AQI): {int(round(us_aqi))}")
+    return "\n".join(lines)
+
+
+def _parent_notice_outdoor_line(lang: str, outdoor_activity: bool) -> str:
+    if not outdoor_activity:
+        return ""
+    if lang == "zh":
+        return (
+            "\n🏃 补充说明：今日学校计划开展户外活动，请为孩子多备饮水，"
+            "并留意班级群老师发布的实时安排。\n"
+        )
+    return (
+        "\n🏃 Note: Outdoor activities are scheduled today. "
+        "Please send extra water and watch for updates from your child’s teacher.\n"
+    )
+
+
+def generate_parent_notice(
+    lang: str,
+    school_name: str,
+    city: str,
+    risk: str,
+    max_temp: float,
+    apparent_temp: float | None,
+    humidity: int,
+    us_aqi: float | None,
+    outdoor_activity: bool,
+) -> str:
+    """Build a copy-ready parent-group notice from current heat-health context."""
+    risk_label = RISK_LEVEL_LONG[lang][risk]
+    weather = _parent_notice_weather_block(lang, max_temp, apparent_temp, humidity, us_aqi)
+    outdoor_line = _parent_notice_outdoor_line(lang, outdoor_activity)
+    actions = PARENT_NOTICE_ACTIONS[lang][risk]
+    today_str = date.today().strftime("%Y年%m月%d日" if lang == "zh" else "%d %B %Y")
+
+    if lang == "zh":
+        return (
+            f"【{school_name}】家长群通知｜今日儿童高温健康提示\n\n"
+            f"各位家长，大家好！👋\n\n"
+            f"根据校园高温健康评估，{city} 今日儿童高温健康风险等级为【{risk_label}】。\n\n"
+            f"📊 今日气象参考：\n{weather}\n"
+            f"{outdoor_line}\n"
+            f"✅ 家校协同提示：\n{actions}\n\n"
+            f"感谢各位家长配合，共同守护孩子夏季健康！🙏\n\n"
+            f"—— {school_name}\n"
+            f"{today_str}"
+        )
+
+    return (
+        f"[{school_name}] Parent notice — child heat-health update\n\n"
+        f"Dear parents and guardians,\n\n"
+        f"Based on today’s campus heat-health assessment for {city}, "
+        f"the child heat-health risk level is **{risk_label}**.\n\n"
+        f"Today’s weather reference:\n{weather}\n"
+        f"{outdoor_line}\n"
+        f"Please support the following:\n{actions}\n\n"
+        f"Thank you for partnering with us to keep children safe in hot weather.\n\n"
+        f"— {school_name}\n"
+        f"{today_str}"
+    )
+
+
+def render_copy_notice_button(label: str, text: str, button_id: str) -> None:
+    """Copy notice text to the clipboard (no messaging APIs)."""
+    payload = json.dumps(text)
+    label_js = json.dumps(label)
+    components.html(
+        f"""
+        <button type="button" id="{button_id}" style="
+            padding: 0.5rem 1.15rem; background: #009EDC; color: white; border: none;
+            border-radius: 8px; cursor: pointer; font-size: 0.92rem; font-family: inherit;">
+            {html.escape(label)}
+        </button>
+        <script>
+        (function() {{
+            var btn = document.getElementById("{button_id}");
+            var txt = {payload};
+            var defaultLabel = {label_js};
+            btn.onclick = function() {{
+                navigator.clipboard.writeText(txt).then(function() {{
+                    btn.innerText = "✓ " + defaultLabel;
+                    setTimeout(function() {{ btn.innerText = defaultLabel; }}, 2200);
+                }}).catch(function() {{}});
+            }};
+        }})();
+        </script>
+        """,
+        height=52,
+    )
+
+
 def generate_ai_guidance(context: dict, lang: str) -> dict[str, str]:
     """Call DeepSeek Chat Completions (OpenAI-compatible). Returns guidance per role."""
     api_key = (os.environ.get("DEEPSEEK_API_KEY") or "").strip()
@@ -1672,6 +1850,32 @@ with g3:
         guidance_nurses,
         "#E76F51",
     )
+
+notice_city = (city_disp or (city or "").strip() or loc_fmt.split(",")[0]).strip()
+parent_notice_text = generate_parent_notice(
+    lang,
+    display_school,
+    notice_city,
+    today_risk,
+    risk_max_temp,
+    risk_apparent,
+    risk_humidity,
+    risk_aqi,
+    outdoor_activity,
+)
+
+st.markdown(f'<p class="section-title">{T["sec_parent_notice"]}</p>', unsafe_allow_html=True)
+st.text_area(
+    T["parent_notice_label"],
+    value=parent_notice_text,
+    height=320,
+)
+render_copy_notice_button(
+    T["copy_notice"],
+    parent_notice_text,
+    "heatsafe_copy_parent_notice",
+)
+st.caption(T["notice_disclaimer"])
 
 st.markdown(
     f"""
