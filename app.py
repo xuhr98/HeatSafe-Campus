@@ -182,6 +182,18 @@ STRINGS = {
         "copy_notice": "复制通知",
         "copy_notice_ok": "已复制到剪贴板，可直接粘贴至家长群。",
         "notice_disclaimer": "本通知仅用于学校健康提醒参考，不构成医疗建议。",
+        "sec_student_ai": "🧒 学生高温健康 AI 助手",
+        "student_age": "学生年龄",
+        "student_outdoor": "今日是否有户外活动",
+        "student_symptoms": "不适症状（可多选）",
+        "student_notes": "补充说明（选填）",
+        "student_notes_ph": "例如：体育课时间较长、午休出汗较多等",
+        "student_generate": "生成健康建议",
+        "student_disclaimer": "本功能仅用于高温健康教育与风险提醒，不构成医疗诊断。",
+        "student_ai_ok": "由 DeepSeek 生成的健康教育建议（非诊断）。",
+        "student_rules_ok": "规则模板建议（DeepSeek 不可用或请求失败时）。",
+        "yes": "是",
+        "no": "否",
         "cap_ai_ok": "基于今日上下文由 DeepSeek 生成的建议。关闭 AI 或请求失败时使用规则模板。",
         "cap_rules": "基于今日风险等级、10:00–16:00 白天平均气温/湿度/紫外线/空气质量（若可用）与活动安排的规则建议。",
         "role_teachers": "教师",
@@ -275,6 +287,20 @@ STRINGS = {
         "notice_disclaimer": (
             "This notice is for school health awareness only and does not constitute medical advice."
         ),
+        "sec_student_ai": "🧒 Student Heat-Health AI Assistant",
+        "student_age": "Student age",
+        "student_outdoor": "Outdoor activity today",
+        "student_symptoms": "Symptoms (select any that apply)",
+        "student_notes": "Additional notes (optional)",
+        "student_notes_ph": "e.g. long PE session, heavy sweating at lunch",
+        "student_generate": "Generate Guidance",
+        "student_disclaimer": (
+            "This feature is for heat-health awareness only and does not provide medical diagnosis."
+        ),
+        "student_ai_ok": "Educational guidance from DeepSeek (not a diagnosis).",
+        "student_rules_ok": "Rule-based guidance (DeepSeek unavailable or request failed).",
+        "yes": "Yes",
+        "no": "No",
         "cap_ai_ok": "AI-generated guidance (DeepSeek) from today's context. "
         "Rule-based templates apply if AI is off or unavailable.",
         "cap_rules": "Rule-based actions from today's risk level, 10:00–16:00 daytime-average "
@@ -1412,6 +1438,167 @@ def render_copy_notice_button(label: str, text: str, button_id: str) -> None:
     )
 
 
+STUDENT_SYMPTOM_KEYS = (
+    "dizziness",
+    "fatigue",
+    "headache",
+    "nausea",
+    "excessive_sweating",
+)
+
+STUDENT_SYMPTOM_LABELS = {
+    "zh": {
+        "dizziness": "头晕",
+        "fatigue": "乏力 / 疲倦",
+        "headache": "头痛",
+        "nausea": "恶心",
+        "excessive_sweating": "出汗过多",
+    },
+    "en": {
+        "dizziness": "Dizziness",
+        "fatigue": "Fatigue",
+        "headache": "Headache",
+        "nausea": "Nausea",
+        "excessive_sweating": "Excessive sweating",
+    },
+}
+
+
+def generate_student_health_guidance_rules(context: dict, lang: str) -> str:
+    """Rule-based child heat-health suggestions (non-diagnostic)."""
+    symptoms = context.get("symptoms") or []
+    age = int(context.get("student_age", 8))
+    outdoor = bool(context.get("outdoor_activity_today"))
+    risk = context.get("campus_risk_level", "Low")
+    notes = (context.get("notes") or "").strip()
+    max_t = context.get("max_temperature_c")
+    humidity = context.get("humidity_percent")
+
+    if lang == "zh":
+        lines = [
+            "【高温健康提示】以下内容仅供校园高温健康教育参考，不能替代医生诊断或治疗。",
+            f"今日校园综合风险等级：{RISK_LEVEL_LONG['zh'].get(risk, risk)}。",
+        ]
+        if max_t is not None:
+            lines.append(f"参考日最高气温约 {max_t:.1f}℃，相对湿度约 {humidity}%。")
+        if outdoor:
+            lines.append("今日有户外活动安排：请避免在烈日下长时间运动，活动间隙到阴凉处休息并补水。")
+        if age <= 6:
+            lines.append("低龄儿童对高温更敏感，建议教师/家长缩短户外停留时间并增加补水频次。")
+        if symptoms:
+            lines.append(f"已反馈不适：{'、'.join(symptoms)}。")
+            lines.append(
+                "建议立即停止剧烈活动，转移到通风阴凉处，解开过多衣物，少量多次饮用温水；"
+                "请教师或家长陪同观察，若不适加重、意识模糊或持续呕吐等，请尽快联系校医并告知家长就医。"
+            )
+        else:
+            lines.append(
+                "暂未反馈明显不适：请继续保持规律饮水、透气衣物与适当休息，"
+                "户外活动前后留意是否有头晕、乏力、头痛、恶心或出汗异常等情况。"
+            )
+        if risk in ("High", "Extreme"):
+            lines.append(
+                "当前校园高温风险偏高：学校可适当缩短户外课时，增加室内通风与补水提醒。"
+            )
+        if notes:
+            lines.append(f"补充说明：{notes}")
+        lines.append("如出现紧急危险情况，请立即联系学校工作人员并拨打当地急救电话。")
+        return "\n\n".join(lines)
+
+    lines = [
+        "[Heat-health notice] For school awareness and education only — not a medical diagnosis.",
+        f"Today's campus risk level: {RISK_LEVEL_LONG['en'].get(risk, risk)}.",
+    ]
+    if max_t is not None:
+        lines.append(
+            f"Reference conditions: max temperature about {max_t:.1f}°C, humidity about {humidity}%."
+        )
+    if outdoor:
+        lines.append(
+            "Outdoor activity is planned today: avoid long sun exposure, take shade breaks, and drink water regularly."
+        )
+    if age <= 6:
+        lines.append(
+            "Younger children are more heat-sensitive; shorten outdoor time and offer water more often."
+        )
+    if symptoms:
+        lines.append(f"Reported symptoms: {', '.join(symptoms)}.")
+        lines.append(
+            "Stop strenuous activity, move to a cool shaded place, loosen clothing, and sip water slowly. "
+            "An adult should stay with the child. If symptoms worsen, consciousness changes, or vomiting persists, "
+            "contact the school nurse and seek medical care promptly."
+        )
+    else:
+        lines.append(
+            "No symptoms selected: continue hydration, breathable clothing, and rest breaks; "
+            "watch for dizziness, fatigue, headache, nausea, or unusual sweating during outdoor time."
+        )
+    if risk in ("High", "Extreme"):
+        lines.append(
+            "Campus heat risk is elevated — consider shorter outdoor sessions and extra hydration reminders."
+        )
+    if notes:
+        lines.append(f"Additional notes: {notes}")
+    lines.append("In an emergency, contact school staff and local emergency services immediately.")
+    return "\n\n".join(lines)
+
+
+def generate_student_health_guidance_ai(context: dict, lang: str) -> str:
+    """Single-turn DeepSeek response for student heat-health education (non-diagnostic)."""
+    api_key = (os.environ.get("DEEPSEEK_API_KEY") or "").strip()
+    if not api_key:
+        raise ValueError("DEEPSEEK_API_KEY is not set")
+
+    if lang == "zh":
+        system = (
+            "你是 HeatSafe Campus 学生高温健康教育助手。"
+            "根据输入信息，用简体中文给出简短、冷静、专业的儿童防暑建议（约 120–200 字）。"
+            "仅做健康教育与风险提醒：不得进行疾病诊断、不得开具药物或治疗方案。"
+            "若出现严重不适，应建议联系教师、校医或家长并及时就医。"
+            "直接输出正文，不要使用 markdown 标题或 JSON。"
+        )
+        user = (
+            "请根据以下信息生成学生高温健康建议：\n\n"
+            f"{json.dumps(context, ensure_ascii=False, indent=2)}"
+        )
+    else:
+        system = (
+            "You are the HeatSafe Campus student heat-health education assistant. "
+            "Provide concise, calm, professional child-safety guidance in English (about 80–140 words). "
+            "Educational only — no medical diagnosis, no prescriptions or treatment plans. "
+            "If symptoms are serious, advise contacting a teacher, school nurse, or parent and seeking care. "
+            "Output plain text only — no markdown headings or JSON."
+        )
+        user = (
+            "Generate student heat-health guidance from this context:\n\n"
+            f"{json.dumps(context, indent=2)}"
+        )
+
+    response = requests.post(
+        DEEPSEEK_CHAT_URL,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": "deepseek-chat",
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "temperature": 0.35,
+        },
+        timeout=60,
+    )
+    response.raise_for_status()
+    data = response.json()
+    content = data["choices"][0]["message"]["content"].strip()
+    if content.startswith("```"):
+        content = re.sub(r"^```(?:\w+)?\s*", "", content)
+        content = re.sub(r"\s*```$", "", content)
+    return content.strip()
+
+
 def generate_ai_guidance(context: dict, lang: str) -> dict[str, str]:
     """Call DeepSeek Chat Completions (OpenAI-compatible). Returns guidance per role."""
     api_key = (os.environ.get("DEEPSEEK_API_KEY") or "").strip()
@@ -1876,6 +2063,87 @@ render_copy_notice_button(
     "heatsafe_copy_parent_notice",
 )
 st.caption(T["notice_disclaimer"])
+
+st.markdown(f'<p class="section-title">{T["sec_student_ai"]}</p>', unsafe_allow_html=True)
+st.caption(T["student_disclaimer"])
+
+with st.form("student_heat_health_form", clear_on_submit=False):
+    age_col, outdoor_col = st.columns(2)
+    with age_col:
+        student_age_input = st.number_input(
+            T["student_age"],
+            min_value=3,
+            max_value=18,
+            value=8,
+            step=1,
+        )
+    with outdoor_col:
+        student_outdoor_choice = st.radio(
+            T["student_outdoor"],
+            options=[T["yes"], T["no"]],
+            horizontal=True,
+            index=0,
+        )
+
+    st.markdown(f"**{T['student_symptoms']}**")
+    sym_cols = st.columns(3)
+    symptom_checked: dict[str, bool] = {}
+    for i, key in enumerate(STUDENT_SYMPTOM_KEYS):
+        with sym_cols[i % 3]:
+            symptom_checked[key] = st.checkbox(STUDENT_SYMPTOM_LABELS[lang][key])
+    student_notes_input = st.text_area(
+        T["student_notes"],
+        placeholder=T["student_notes_ph"],
+        height=72,
+    )
+    student_form_submitted = st.form_submit_button(
+        T["student_generate"],
+        type="primary",
+        use_container_width=True,
+    )
+
+if student_form_submitted:
+    selected_symptoms = [
+        STUDENT_SYMPTOM_LABELS[lang][key]
+        for key in STUDENT_SYMPTOM_KEYS
+        if symptom_checked.get(key)
+    ]
+    student_health_context = {
+        "student_age": int(student_age_input),
+        "outdoor_activity_today": student_outdoor_choice == T["yes"],
+        "symptoms": selected_symptoms,
+        "notes": student_notes_input.strip(),
+        "campus_risk_level": today_risk,
+        "campus_risk_score": float(risk_score),
+        "max_temperature_c": risk_max_temp,
+        "apparent_temperature_c": risk_apparent,
+        "humidity_percent": risk_humidity,
+        "us_aqi": risk_aqi,
+        "city": notice_city,
+        "school_name": display_school,
+    }
+    student_guidance_text = ""
+    student_guidance_source = ""
+    api_key_set = bool((os.environ.get("DEEPSEEK_API_KEY") or "").strip())
+    if api_key_set:
+        try:
+            student_guidance_text = generate_student_health_guidance_ai(
+                student_health_context, lang
+            )
+            student_guidance_source = T["student_ai_ok"]
+        except Exception as exc:
+            student_guidance_text = generate_student_health_guidance_rules(
+                student_health_context, lang
+            )
+            student_guidance_source = f"{T['student_rules_ok']} ({type(exc).__name__})"
+    else:
+        student_guidance_text = generate_student_health_guidance_rules(
+            student_health_context, lang
+        )
+        student_guidance_source = T["student_rules_ok"]
+
+    st.info(student_guidance_text)
+    st.caption(student_guidance_source)
 
 st.markdown(
     f"""
