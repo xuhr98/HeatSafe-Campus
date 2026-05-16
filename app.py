@@ -117,6 +117,8 @@ STRINGS = {
         "city_ph": "例如：北京、东京、上海",
         "school_type": "学段 / 学校类型",
         "outdoor": "今日计划开展户外活动",
+        "insufficient_shade": "校园遮阳不足",
+        "insufficient_water": "饮水设施不足",
         "use_ai": "使用 AI 生成建议",
         "tip_climate": "🌡️ **气象** · 尽量使用实时天气数据",
         "tip_school": "🏫 **学校** · 面向儿童的综合风险因素",
@@ -139,17 +141,34 @@ STRINGS = {
         "ctx_outdoor": "· 今日计划户外活动",
         "sec_dash": "📊 今日高温健康看板",
         "risk_scale": "风险等级：",
+        "risk_factors_title": "风险得分因素说明",
+        "risk_factors_body": (
+            "得分由下列因素**累加**（上限 100 分），评分使用**日最高气温**、**相对湿度**、"
+            "**体感温度（热指数代理）**及 **US AQI**（不含紫外线、PM2.5）：\n\n"
+            "- 日最高气温 ≥ 35°C：+20\n"
+            "- 日最高气温 ≥ 38°C：+35\n"
+            "- 相对湿度 ≥ 65%：+15\n"
+            "- 体感温度（热指数代理）≥ 40°C：+25\n"
+            "- US AQI ≥ 100：+10\n"
+            "- 今日计划户外活动：+15\n"
+            "- 幼儿园或小学学段：+10\n"
+            "- 校园遮阳不足：+10\n"
+            "- 饮水设施不足：+10"
+        ),
         "metric_risk": "风险等级",
-        "metric_temp": "气温",
-        "metric_hum": "湿度",
-        "metric_uv": "紫外线指数",
-        "metric_temp_sub": "今日预报最高气温",
-        "metric_hum_sub": "日最高相对湿度",
-        "metric_uv_sub": "今日紫外线峰值",
+        "metric_temp": "白天平均气温（10:00–16:00）",
+        "metric_hum": "白天平均湿度（10:00–16:00）",
+        "metric_uv": "白天平均紫外线指数（10:00–16:00）",
+        "metric_temp_sub": "日最高气温（参考）",
+        "metric_hum_sub": "日最高相对湿度（参考）",
+        "metric_uv_sub": "日紫外线峰值（参考）",
         "metric_aqi": "US AQI",
-        "metric_pm25": "PM2.5",
-        "metric_aqi_sub": "当日小时最大值（美国 AQI）",
-        "metric_pm25_sub": "当日最大浓度（µg/m³）",
+        "metric_pm25": "白天平均 PM2.5（10:00–16:00）",
+        "metric_aqi_sub": "白天平均 US AQI（10:00–16:00）",
+        "metric_pm25_sub": "日最大 PM2.5（参考，µg/m³）",
+        "daytime_exposure_note": (
+            "本系统优先使用 10:00–16:00 白天时段平均值，以更贴近学校户外活动和上下学时段的儿童暴露风险。"
+        ),
         "metric_score": "得分",
         "sec_chart": "📈 七日天气趋势",
         "chart_cap": "气温与湿度展望 ·",
@@ -158,7 +177,7 @@ STRINGS = {
         "exp_table": "📋 查看七日预报明细表",
         "sec_guide": "👧 分角色儿童安全建议",
         "cap_ai_ok": "基于今日上下文由 DeepSeek 生成的建议。关闭 AI 或请求失败时使用规则模板。",
-        "cap_rules": "基于今日风险等级、气温、湿度、紫外线、空气质量（若可用）与活动安排的规则建议。",
+        "cap_rules": "基于今日风险等级、10:00–16:00 白天平均气温/湿度/紫外线/空气质量（若可用）与活动安排的规则建议。",
         "role_teachers": "教师",
         "role_parents": "家长",
         "role_nurses": "校医",
@@ -166,10 +185,10 @@ STRINGS = {
         "disclaimer": (
             "<strong>免责声明：</strong>本工具仅提供预警与健康教育支持，不提供医学诊断。"
         ),
-        "chart_legend_max_temp": "最高气温 (°C)",
-        "chart_legend_hum": "相对湿度 (%)",
-        "chart_y_temp": "气温 (°C)",
-        "chart_y_hum": "相对湿度 (%)",
+        "chart_legend_daytime_temp": "白天平均气温（10:00–16:00）",
+        "chart_legend_daytime_hum": "白天平均湿度（10:00–16:00）",
+        "chart_y_temp": "白天平均气温 (°C)",
+        "chart_y_hum": "白天平均湿度 (%)",
         "sec_map": "学校位置地图",
         "map_unavailable": "当前无法显示学校位置地图。成功通过高德地图定位学校后即可查看。",
     },
@@ -183,6 +202,8 @@ STRINGS = {
         "city_ph": "e.g. Beijing, Tokyo, Shanghai",
         "school_type": "School type",
         "outdoor": "Outdoor activity planned today",
+        "insufficient_shade": "Insufficient campus shade",
+        "insufficient_water": "Insufficient drinking water facilities",
         "use_ai": "Use AI-generated guidance",
         "tip_climate": "🌡️ **Climate** · Live weather when available",
         "tip_school": "🏫 **School** · Child-focused risk factors",
@@ -205,17 +226,35 @@ STRINGS = {
         "ctx_outdoor": " · Outdoor activity planned",
         "sec_dash": "📊 Today's heat health dashboard",
         "risk_scale": "Risk scale:",
+        "risk_factors_title": "How the risk score is calculated",
+        "risk_factors_body": (
+            "Points **add up** (cap 100). Scoring uses **daily max temperature**, **humidity**, "
+            "**apparent temperature (heat-index proxy)**, and **US AQI** (UV and PM2.5 are excluded):\n\n"
+            "- Max temperature ≥ 35°C: +20\n"
+            "- Max temperature ≥ 38°C: +35\n"
+            "- Humidity ≥ 65%: +15\n"
+            "- Apparent temperature (heat-index proxy) ≥ 40°C: +25\n"
+            "- US AQI ≥ 100: +10\n"
+            "- Outdoor PE / outdoor activity planned: +15\n"
+            "- Kindergarten or primary school: +10\n"
+            "- Insufficient campus shade: +10\n"
+            "- Insufficient drinking water facilities: +10"
+        ),
         "metric_risk": "Risk level",
-        "metric_temp": "Temperature",
-        "metric_hum": "Humidity",
-        "metric_uv": "UV index",
-        "metric_temp_sub": "Today's forecast max",
-        "metric_hum_sub": "Daily maximum",
-        "metric_uv_sub": "Peak UV today",
+        "metric_temp": "Daytime Avg Temp (10:00–16:00)",
+        "metric_hum": "Daytime Avg Humidity (10:00–16:00)",
+        "metric_uv": "Daytime Avg UV Index (10:00–16:00)",
+        "metric_temp_sub": "Daily max (reference)",
+        "metric_hum_sub": "Daily max humidity (reference)",
+        "metric_uv_sub": "Daily peak UV (reference)",
         "metric_aqi": "US AQI",
-        "metric_pm25": "PM2.5",
-        "metric_aqi_sub": "Daily max (hourly)",
-        "metric_pm25_sub": "Daily max concentration (µg/m³)",
+        "metric_pm25": "Daytime Avg PM2.5 (10:00–16:00)",
+        "metric_aqi_sub": "Daytime avg US AQI (10:00–16:00)",
+        "metric_pm25_sub": "Daily max PM2.5 (reference, µg/m³)",
+        "daytime_exposure_note": (
+            "This prototype prioritizes 10:00–16:00 daytime averages to better reflect "
+            "children’s exposure during school activity and commuting hours."
+        ),
         "metric_score": "Score",
         "sec_chart": "📈 7-day weather trend",
         "chart_cap": "Temperature and humidity outlook ·",
@@ -225,8 +264,8 @@ STRINGS = {
         "sec_guide": "👧 Role-specific guidance for child safety",
         "cap_ai_ok": "AI-generated guidance (DeepSeek) from today's context. "
         "Rule-based templates apply if AI is off or unavailable.",
-        "cap_rules": "Rule-based actions from today's risk level, temperature, humidity, UV, "
-        "air quality (when available), and activity plan.",
+        "cap_rules": "Rule-based actions from today's risk level, 10:00–16:00 daytime-average "
+        "temperature, humidity, UV, air quality (when available), and activity plan.",
         "role_teachers": "Teachers",
         "role_parents": "Parents",
         "role_nurses": "School Nurses",
@@ -235,10 +274,10 @@ STRINGS = {
             "<strong>Disclaimer:</strong> This tool provides early warning and health education support only. "
             "It does not provide medical diagnosis."
         ),
-        "chart_legend_max_temp": "Max temperature (°C)",
-        "chart_legend_hum": "Humidity (%)",
-        "chart_y_temp": "Temperature (°C)",
-        "chart_y_hum": "Humidity (%)",
+        "chart_legend_daytime_temp": "Daytime avg temp (10:00–16:00)",
+        "chart_legend_daytime_hum": "Daytime avg humidity (10:00–16:00)",
+        "chart_y_temp": "Daytime avg temp (°C)",
+        "chart_y_hum": "Daytime avg humidity (%)",
         "sec_map": "School Location Map",
         "map_unavailable": "School location map is unavailable. Resolve the school with Amap to view the map.",
     },
@@ -247,14 +286,22 @@ STRINGS = {
 FORECAST_COLUMN_NAMES = {
     "zh": {
         "Day": "日期",
+        "Daytime Avg Temp (°C)": "白天平均气温（10:00–16:00）",
         "Max Temp (°C)": "最高气温 (°C)",
+        "Daytime Avg Feels-like (°C)": "白天平均体感温度（10:00–16:00）",
         "Apparent temp (°C)": "体感最高温 (°C)",
-        "Humidity (%)": "相对湿度 (%)",
-        "UV Index": "紫外线指数",
+        "Daytime Avg Humidity (%)": "白天平均湿度（10:00–16:00）",
+        "Humidity (%)": "日最高相对湿度 (%)",
+        "Daytime Avg UV Index": "白天平均紫外线指数（10:00–16:00）",
+        "UV Index": "紫外线峰值",
         "Conditions": "天气状况",
+        "Daytime Avg US AQI": "白天平均 US AQI（10:00–16:00）",
         "US AQI (max)": "US AQI（日最大）",
+        "Daytime Avg PM2.5 (µg/m³)": "白天平均 PM2.5（10:00–16:00）",
         "PM2.5 max (µg/m³)": "PM2.5 日最大（µg/m³）",
+        "Daytime Avg PM10 (µg/m³)": "白天平均 PM10（10:00–16:00）",
         "PM10 max (µg/m³)": "PM10 日最大（µg/m³）",
+        "Daytime Avg Ozone (µg/m³)": "白天平均臭氧（10:00–16:00）",
         "Ozone max (µg/m³)": "臭氧日最大（µg/m³）",
     },
 }
@@ -333,24 +380,31 @@ def _mock_city_key(city_name: str) -> str:
 
 def build_mock_forecast(city_name: str) -> pd.DataFrame:
     base = CITY_WEATHER[_mock_city_key(city_name)]
-    mock_uv = [7.2, 8.1, 6.5, 5.0, 7.0, 6.2, 4.8]
+    mock_uv_max = [7.2, 8.1, 6.5, 5.0, 7.0, 6.2, 4.8]
     rows = []
     today = date.today()
     for day in range(7):
         max_t = round(base["max_temp"] - day * 0.6 + (day % 2) * 0.5, 1)
-        hum = int(max(30, min(95, base["humidity"] + day * 2 - 3)))
-        # Mock “feels like” max when live apparent temp is unavailable
-        apparent = round(max_t + 1.5 + (hum - 50) * 0.035, 1)
+        hum_max = int(max(30, min(95, base["humidity"] + day * 2 - 3)))
+        apparent_max = round(max_t + 1.5 + (hum_max - 50) * 0.035, 1)
+        daytime_t = round(max_t - 1.2, 1)
+        daytime_apparent = round(apparent_max - 1.0, 1)
+        daytime_hum = int(max(30, min(95, hum_max - 5)))
+        daytime_uv = round(mock_uv_max[day] - 0.6, 1)
         iso_d = (today + timedelta(days=day)).isoformat()
         rows.append(
             {
                 "ISO date": iso_d,
                 "Day": f"Day {day + 1}",
-                "Max Temp (°C)": max_t,
-                "Apparent temp (°C)": apparent,
-                "Humidity (%)": hum,
-                "UV Index": mock_uv[day],
-                "Conditions": ["Sunny", "Partly cloudy", "Cloudy", "Light rain"][day % 4],
+                COL_DAYTIME_TEMP: daytime_t,
+                COL_MAX_TEMP: max_t,
+                COL_DAYTIME_APPARENT: daytime_apparent,
+                COL_MAX_APPARENT: apparent_max,
+                COL_DAYTIME_HUM: daytime_hum,
+                COL_MAX_HUM: hum_max,
+                COL_DAYTIME_UV: daytime_uv,
+                COL_MAX_UV: mock_uv_max[day],
+                "Conditions": _conditions_label(daytime_uv),
             }
         )
     return pd.DataFrame(rows)
@@ -368,14 +422,104 @@ def _conditions_label(uv_index: float | None) -> str:
     return "Overcast"
 
 
+DAYTIME_HOUR_START = 10
+DAYTIME_HOUR_END = 16  # inclusive local hours for school exposure window
+PM25_DAYTIME_RISK_THRESHOLD_UG_M3 = 35.0
+
+COL_DAYTIME_TEMP = "Daytime Avg Temp (°C)"
+COL_MAX_TEMP = "Max Temp (°C)"
+COL_DAYTIME_APPARENT = "Daytime Avg Feels-like (°C)"
+COL_MAX_APPARENT = "Apparent temp (°C)"
+COL_DAYTIME_HUM = "Daytime Avg Humidity (%)"
+COL_MAX_HUM = "Humidity (%)"
+COL_DAYTIME_UV = "Daytime Avg UV Index"
+COL_MAX_UV = "UV Index"
+
+AQ_COL_PM25_DAY = "Daytime Avg PM2.5 (µg/m³)"
+AQ_COL_PM25_MAX = "PM2.5 max (µg/m³)"
+AQ_COL_PM10_DAY = "Daytime Avg PM10 (µg/m³)"
+AQ_COL_PM10_MAX = "PM10 max (µg/m³)"
+AQ_COL_OZONE_DAY = "Daytime Avg Ozone (µg/m³)"
+AQ_COL_OZONE_MAX = "Ozone max (µg/m³)"
+AQ_COL_US_AQI_DAY = "Daytime Avg US AQI"
+AQ_COL_US_AQI_MAX = "US AQI (max)"
+
+
+def _hour_from_local_timestamp(time_str: str) -> int:
+    return int(time_str[11:13])
+
+
+def _is_daytime_hour(time_str: str) -> bool:
+    h = _hour_from_local_timestamp(time_str)
+    return DAYTIME_HOUR_START <= h <= DAYTIME_HOUR_END
+
+
+def _aggregate_hourly_daytime_avg(
+    hourly_times: list[str],
+    series_by_key: dict[str, list | None],
+) -> dict[str, dict[str, float]]:
+    """Per calendar day (YYYY-MM-DD), mean of hourly values from 10:00–16:00 local."""
+    sums: dict[str, dict[str, float]] = {}
+    counts: dict[str, dict[str, int]] = {}
+    for i, time_str in enumerate(hourly_times):
+        if not _is_daytime_hour(time_str):
+            continue
+        day = time_str[:10]
+        for key, series in series_by_key.items():
+            if series is None or i >= len(series):
+                continue
+            val = series[i]
+            if val is None:
+                continue
+            sums.setdefault(day, {})[key] = sums.get(day, {}).get(key, 0.0) + float(val)
+            counts.setdefault(day, {})[key] = counts.get(day, {}).get(key, 0) + 1
+    out: dict[str, dict[str, float]] = {}
+    for day, keys in sums.items():
+        out[day] = {}
+        for key, total in keys.items():
+            n = counts[day][key]
+            if n:
+                out[day][key] = total / n
+    return out
+
+
+def _aggregate_hourly_daily_max(
+    hourly_times: list[str],
+    series_by_key: dict[str, list | None],
+) -> dict[str, dict[str, float]]:
+    daily: dict[str, dict[str, float]] = {}
+    for i, time_str in enumerate(hourly_times):
+        day = time_str[:10]
+        for key, series in series_by_key.items():
+            if series is None or i >= len(series):
+                continue
+            val = series[i]
+            if val is None:
+                continue
+            bucket = daily.setdefault(day, {})
+            prev = bucket.get(key)
+            fv = float(val)
+            if prev is None or fv > prev:
+                bucket[key] = fv
+    return daily
+
+
 def _daily_max_humidity(hourly_times: list[str], humidity_values: list) -> dict[str, int]:
     daily_max: dict[str, float] = {}
     for time_str, humidity in zip(hourly_times, humidity_values):
         if humidity is None:
             continue
         day = time_str[:10]
-        daily_max[day] = max(daily_max.get(day, 0), humidity)
+        daily_max[day] = max(daily_max.get(day, 0), float(humidity))
     return {day: int(round(value)) for day, value in daily_max.items()}
+
+
+def primary_series_value(row: pd.Series, daytime_col: str, fallback_col: str):
+    """Prefer daytime average; fall back to daily max when hourly daytime data is missing."""
+    v = row.get(daytime_col)
+    if v is not None and not (isinstance(v, float) and pd.isna(v)):
+        return v
+    return row.get(fallback_col)
 
 
 def geocode_school_with_amap(school_name: str, city_name: str) -> dict:
@@ -468,7 +612,9 @@ def fetch_forecast(latitude: float, longitude: float) -> pd.DataFrame:
             "latitude": latitude,
             "longitude": longitude,
             "daily": "temperature_2m_max,apparent_temperature_max,uv_index_max",
-            "hourly": "relative_humidity_2m",
+            "hourly": (
+                "temperature_2m,apparent_temperature,relative_humidity_2m,uv_index"
+            ),
             "timezone": "auto",
             "forecast_days": 7,
         },
@@ -479,64 +625,75 @@ def fetch_forecast(latitude: float, longitude: float) -> pd.DataFrame:
 
     daily = payload["daily"]
     hourly = payload["hourly"]
-    humidity_by_day = _daily_max_humidity(
-        hourly["time"], hourly["relative_humidity_2m"]
+    times = hourly["time"]
+    weather_keys = {
+        "temperature_2m": hourly.get("temperature_2m"),
+        "apparent_temperature": hourly.get("apparent_temperature"),
+        "relative_humidity_2m": hourly.get("relative_humidity_2m"),
+        "uv_index": hourly.get("uv_index"),
+    }
+    daytime_avg = _aggregate_hourly_daytime_avg(times, weather_keys)
+    humidity_max_by_day = _daily_max_humidity(
+        times, hourly.get("relative_humidity_2m") or []
     )
 
     rows = []
     for i, date_str in enumerate(daily["time"]):
         max_temp = daily["temperature_2m_max"][i]
-        apparent = daily["apparent_temperature_max"][i]
-        humidity = humidity_by_day.get(date_str, 50)
-        uv_index = daily["uv_index_max"][i]
+        apparent_max = daily["apparent_temperature_max"][i]
+        uv_max = daily["uv_index_max"][i]
+        hum_max = humidity_max_by_day.get(date_str, 50)
+        day_avg = daytime_avg.get(date_str, {})
+
+        def _avg(key: str, fallback):
+            if key in day_avg:
+                return day_avg[key]
+            return fallback
+
+        dt = _avg("temperature_2m", max_temp)
+        da = _avg("apparent_temperature", apparent_max)
+        dh = _avg("relative_humidity_2m", hum_max)
+        duv = _avg("uv_index", uv_max)
+
         rows.append(
             {
                 "ISO date": date_str,
                 "Day": pd.to_datetime(date_str).strftime("%a %d %b"),
-                "Max Temp (°C)": round(max_temp, 1),
-                "Apparent temp (°C)": round(apparent, 1) if apparent is not None else None,
-                "Humidity (%)": humidity,
-                "UV Index": round(uv_index, 1) if uv_index is not None else None,
-                "Conditions": _conditions_label(uv_index),
+                COL_DAYTIME_TEMP: round(dt, 1) if dt is not None else None,
+                COL_MAX_TEMP: round(max_temp, 1),
+                COL_DAYTIME_APPARENT: round(da, 1) if da is not None else None,
+                COL_MAX_APPARENT: round(apparent_max, 1) if apparent_max is not None else None,
+                COL_DAYTIME_HUM: int(round(dh)) if dh is not None else hum_max,
+                COL_MAX_HUM: hum_max,
+                COL_DAYTIME_UV: round(duv, 1) if duv is not None else None,
+                COL_MAX_UV: round(uv_max, 1) if uv_max is not None else None,
+                "Conditions": _conditions_label(duv if duv is not None else uv_max),
             }
         )
     return pd.DataFrame(rows)
 
 
-AQ_COL_PM25 = "PM2.5 max (µg/m³)"
-AQ_COL_PM10 = "PM10 max (µg/m³)"
-AQ_COL_OZONE = "Ozone max (µg/m³)"
-AQ_COL_US_AQI = "US AQI (max)"
-
-
-def _aggregate_air_quality_hourly_to_daily(payload: dict) -> dict[str, dict[str, float]]:
-    """Map calendar date (YYYY-MM-DD) -> daily maximum per pollutant."""
+def _aggregate_air_quality_hourly(payload: dict) -> tuple[dict[str, dict[str, float]], dict[str, dict[str, float]]]:
+    """Return (10:00–16:00 daytime averages, daily maxima) per pollutant by date."""
     hourly = payload.get("hourly") or {}
     times = hourly.get("time") or []
     if not times:
-        return {}
+        return {}, {}
 
-    vars_track = ["pm2_5", "pm10", "ozone", "us_aqi"]
-    daily: dict[str, dict[str, float]] = {}
-
-    for var in vars_track:
-        series = hourly.get(var)
-        if series is None:
-            continue
-        for t_str, val in zip(times, series):
-            if val is None:
-                continue
-            day_key = t_str[:10]
-            bucket = daily.setdefault(day_key, {})
-            prev = bucket.get(var)
-            if prev is None or float(val) > prev:
-                bucket[var] = float(val)
-
-    return daily
+    series = {
+        "pm2_5": hourly.get("pm2_5"),
+        "pm10": hourly.get("pm10"),
+        "ozone": hourly.get("ozone"),
+        "us_aqi": hourly.get("us_aqi"),
+    }
+    return (
+        _aggregate_hourly_daytime_avg(times, series),
+        _aggregate_hourly_daily_max(times, series),
+    )
 
 
 def merge_air_quality_into_forecast(df: pd.DataFrame, latitude: float, longitude: float) -> tuple[pd.DataFrame, bool]:
-    """Attach daily-max air quality columns aligned by ISO date. Returns (df, ok)."""
+    """Attach daytime-average and daily-max air quality columns. Returns (df, ok)."""
     out = df.copy()
     try:
         response = requests.get(
@@ -555,31 +712,53 @@ def merge_air_quality_into_forecast(df: pd.DataFrame, latitude: float, longitude
     except Exception:
         return out, False
 
-    daily_maps = _aggregate_air_quality_hourly_to_daily(payload)
-    if not daily_maps:
+    daytime_maps, max_maps = _aggregate_air_quality_hourly(payload)
+    if not daytime_maps and not max_maps:
         return out, False
 
     if "ISO date" not in out.columns:
         return out, False
 
-    out[AQ_COL_PM25] = math.nan
-    out[AQ_COL_PM10] = math.nan
-    out[AQ_COL_OZONE] = math.nan
-    out[AQ_COL_US_AQI] = math.nan
+    for col in (
+        AQ_COL_PM25_DAY,
+        AQ_COL_PM25_MAX,
+        AQ_COL_PM10_DAY,
+        AQ_COL_PM10_MAX,
+        AQ_COL_OZONE_DAY,
+        AQ_COL_OZONE_MAX,
+        AQ_COL_US_AQI_DAY,
+        AQ_COL_US_AQI_MAX,
+    ):
+        out[col] = math.nan
 
     for idx in range(len(out)):
         dk = str(out.iloc[idx]["ISO date"])[:10]
-        dm = daily_maps.get(dk)
-        if not dm:
-            continue
-        if "pm2_5" in dm:
-            out.loc[out.index[idx], AQ_COL_PM25] = round(dm["pm2_5"], 1)
-        if "pm10" in dm:
-            out.loc[out.index[idx], AQ_COL_PM10] = round(dm["pm10"], 1)
-        if "ozone" in dm:
-            out.loc[out.index[idx], AQ_COL_OZONE] = round(dm["ozone"], 1)
-        if "us_aqi" in dm:
-            out.loc[out.index[idx], AQ_COL_US_AQI] = round(dm["us_aqi"], 1)
+        d_avg = daytime_maps.get(dk, {})
+        d_max = max_maps.get(dk, {})
+        if "pm2_5" in d_avg:
+            out.loc[out.index[idx], AQ_COL_PM25_DAY] = round(d_avg["pm2_5"], 1)
+        elif "pm2_5" in d_max:
+            out.loc[out.index[idx], AQ_COL_PM25_DAY] = round(d_max["pm2_5"], 1)
+        if "pm2_5" in d_max:
+            out.loc[out.index[idx], AQ_COL_PM25_MAX] = round(d_max["pm2_5"], 1)
+        if "pm10" in d_avg:
+            out.loc[out.index[idx], AQ_COL_PM10_DAY] = round(d_avg["pm10"], 1)
+        elif "pm10" in d_max:
+            out.loc[out.index[idx], AQ_COL_PM10_DAY] = round(d_max["pm10"], 1)
+        if "pm10" in d_max:
+            out.loc[out.index[idx], AQ_COL_PM10_MAX] = round(d_max["pm10"], 1)
+        if "ozone" in d_avg:
+            out.loc[out.index[idx], AQ_COL_OZONE_DAY] = round(d_avg["ozone"], 1)
+        elif "ozone" in d_max:
+            out.loc[out.index[idx], AQ_COL_OZONE_DAY] = round(d_max["ozone"], 1)
+        if "ozone" in d_max:
+            out.loc[out.index[idx], AQ_COL_OZONE_MAX] = round(d_max["ozone"], 1)
+        if "us_aqi" in d_avg:
+            out.loc[out.index[idx], AQ_COL_US_AQI_DAY] = round(d_avg["us_aqi"], 1)
+        elif "us_aqi" in d_max:
+            out.loc[out.index[idx], AQ_COL_US_AQI_DAY] = round(d_max["us_aqi"], 1)
+        if "us_aqi" in d_max:
+            out.loc[out.index[idx], AQ_COL_US_AQI_MAX] = round(d_max["us_aqi"], 1)
 
     out = out.drop(columns=["ISO date"], errors="ignore")
     return out, True
@@ -676,19 +855,38 @@ def risk_level(score: float) -> str:
     return "Extreme"
 
 
+YOUNG_SCHOOL_TYPES = frozenset({"Kindergarten", "Primary School"})
+
+
 def calculate_risk_score(
     max_temp: float,
     humidity: int,
+    apparent_temp: float | None,
+    us_aqi: float | None,
     school_type: str,
     outdoor_activity: bool,
-    us_aqi: float | None = None,
+    insufficient_shade: bool,
+    insufficient_water: bool,
 ) -> float:
-    temp_component = max(0, (max_temp - 28) * 4)
-    humidity_component = max(0, (humidity - 60) * 0.5)
-    score = (temp_component + humidity_component) * SCHOOL_TYPE_FACTOR[school_type]
-    if outdoor_activity:
-        score *= 1.12
+    """HeatSafe Campus MVP additive risk score (0–100). Uses daily max weather metrics."""
+    score = 0.0
+    if max_temp >= 35:
+        score += 20
+    if max_temp >= 38:
+        score += 35
+    if humidity >= 65:
+        score += 15
+    if apparent_temp is not None and apparent_temp >= 40:
+        score += 25
     if us_aqi is not None and us_aqi >= 100:
+        score += 10
+    if outdoor_activity:
+        score += 15
+    if school_type in YOUNG_SCHOOL_TYPES:
+        score += 10
+    if insufficient_shade:
+        score += 10
+    if insufficient_water:
         score += 10
     return round(min(100, score), 1)
 
@@ -788,12 +986,14 @@ def render_risk_legend(lang: str) -> None:
 
 def build_forecast_chart(forecast: pd.DataFrame, lang: str) -> go.Figure:
     T = STRINGS[lang]
+    temp_col = COL_DAYTIME_TEMP if COL_DAYTIME_TEMP in forecast.columns else COL_MAX_TEMP
+    hum_col = COL_DAYTIME_HUM if COL_DAYTIME_HUM in forecast.columns else COL_MAX_HUM
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(
         go.Scatter(
             x=forecast["Day"],
-            y=forecast["Max Temp (°C)"],
-            name=T["chart_legend_max_temp"],
+            y=forecast[temp_col],
+            name=T["chart_legend_daytime_temp"],
             mode="lines+markers",
             line=dict(color="#009EDC", width=2.5),
             marker=dict(size=7, color="#009EDC"),
@@ -803,8 +1003,8 @@ def build_forecast_chart(forecast: pd.DataFrame, lang: str) -> go.Figure:
     fig.add_trace(
         go.Scatter(
             x=forecast["Day"],
-            y=forecast["Humidity (%)"],
-            name=T["chart_legend_hum"],
+            y=forecast[hum_col],
+            name=T["chart_legend_daytime_hum"],
             mode="lines+markers",
             line=dict(color="#7CB9A8", width=2, dash="dot"),
             marker=dict(size=6, color="#7CB9A8"),
@@ -1024,7 +1224,7 @@ def generate_guidance(
     uv = _uv_numeric(uv_index)
     if uv is not None and uv > 8:
         parts.append(addons["high_uv"][role])
-    if humidity > 70:
+    if humidity >= 65:
         parts.append(addons["high_humidity"][role])
     if outdoor_activity:
         parts.append(addons["outdoor_planned"][role])
@@ -1130,6 +1330,12 @@ def optional_float(cell) -> float | None:
         return None
 
 
+def metric_reference_sub(label: str, value) -> str:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return label
+    return f"{label}: {value}"
+
+
 def render_school_location_map(
     lang: str,
     amap_ok: bool,
@@ -1196,6 +1402,8 @@ with st.sidebar:
     chosen_label = st.selectbox(T["school_type"], school_labels)
     school_type = next(val for lab, val in school_options if lab == chosen_label)
     outdoor_activity = st.checkbox(T["outdoor"])
+    insufficient_shade = st.checkbox(T["insufficient_shade"])
+    insufficient_water = st.checkbox(T["insufficient_water"])
     use_ai_guidance = st.checkbox(T["use_ai"], value=False)
     st.markdown("---")
     st.markdown(T["tip_climate"])
@@ -1250,17 +1458,6 @@ if city_disp and normalize_city_name(city_disp) != city_disp:
 else:
     location_label = loc_fmt
 today = forecast.iloc[0]
-max_temp = today["Max Temp (°C)"]
-humidity = int(today["Humidity (%)"])
-today_uv = today.get("UV Index")
-apparent_max = today.get("Apparent temp (°C)")
-today_us_aqi = optional_float(today.get(AQ_COL_US_AQI))
-today_pm25 = optional_float(today.get(AQ_COL_PM25))
-risk_score = calculate_risk_score(
-    max_temp, humidity, school_type, outdoor_activity, us_aqi=today_us_aqi
-)
-today_risk = risk_level(risk_score)
-risk_style = RISK_STYLES[today_risk]
 
 data_live_key = "ctx_live" if using_live else "ctx_demo"
 data_source = T[data_live_key]
@@ -1279,7 +1476,40 @@ st.markdown(
 )
 
 st.markdown(f'<p class="section-title">{T["sec_dash"]}</p>', unsafe_allow_html=True)
+st.caption(T["daytime_exposure_note"])
 render_risk_legend(lang)
+with st.expander(T["risk_factors_title"], expanded=False):
+    st.markdown(T["risk_factors_body"])
+
+today_temp = float(primary_series_value(today, COL_DAYTIME_TEMP, COL_MAX_TEMP))
+today_humidity = int(primary_series_value(today, COL_DAYTIME_HUM, COL_MAX_HUM))
+today_uv = primary_series_value(today, COL_DAYTIME_UV, COL_MAX_UV)
+today_apparent = optional_float(primary_series_value(today, COL_DAYTIME_APPARENT, COL_MAX_APPARENT))
+today_us_aqi = optional_float(primary_series_value(today, AQ_COL_US_AQI_DAY, AQ_COL_US_AQI_MAX))
+today_pm25 = optional_float(primary_series_value(today, AQ_COL_PM25_DAY, AQ_COL_PM25_MAX))
+max_temp_ref = today.get(COL_MAX_TEMP)
+hum_max_ref = today.get(COL_MAX_HUM)
+uv_max_ref = today.get(COL_MAX_UV)
+
+risk_max_temp = float(max_temp_ref if max_temp_ref is not None else today_temp)
+risk_humidity = int(hum_max_ref if hum_max_ref is not None else today_humidity)
+risk_apparent = optional_float(today.get(COL_MAX_APPARENT))
+if risk_apparent is None:
+    risk_apparent = today_apparent
+risk_aqi = optional_float(primary_series_value(today, AQ_COL_US_AQI_MAX, AQ_COL_US_AQI_DAY))
+
+risk_score = calculate_risk_score(
+    risk_max_temp,
+    risk_humidity,
+    risk_apparent,
+    risk_aqi,
+    school_type,
+    outdoor_activity,
+    insufficient_shade,
+    insufficient_water,
+)
+today_risk = risk_level(risk_score)
+risk_style = RISK_STYLES[today_risk]
 
 risk_label_long = RISK_LEVEL_LONG[lang][today_risk]
 risk_sub = f"{risk_label_long} · {T['metric_score']} {risk_score}/100"
@@ -1294,15 +1524,40 @@ with m1:
         risk_style["color"],
     )
 with m2:
-    render_metric_card(T["metric_temp"], f"{max_temp} °C", "🌡️", T["metric_temp_sub"], "#009EDC")
+    render_metric_card(
+        T["metric_temp"],
+        f"{today_temp} °C",
+        "🌡️",
+        metric_reference_sub(
+            T["metric_temp_sub"], f"{max_temp_ref} °C" if max_temp_ref is not None else None
+        ),
+        "#009EDC",
+    )
 with m3:
-    render_metric_card(T["metric_hum"], f"{humidity}%", "💧", T["metric_hum_sub"], "#5C9EAD")
+    render_metric_card(
+        T["metric_hum"],
+        f"{today_humidity}%",
+        "💧",
+        metric_reference_sub(
+            T["metric_hum_sub"], f"{hum_max_ref}%" if hum_max_ref is not None else None
+        ),
+        "#5C9EAD",
+    )
 with m4:
-    render_metric_card(T["metric_uv"], format_uv(today_uv, lang), "☀️", T["metric_uv_sub"], "#F4A261")
+    render_metric_card(
+        T["metric_uv"],
+        format_uv(today_uv, lang),
+        "☀️",
+        metric_reference_sub(
+            T["metric_uv_sub"],
+            format_uv(uv_max_ref, lang) if uv_max_ref is not None else None,
+        ),
+        "#F4A261",
+    )
 with m5:
     render_metric_card(
         T["metric_aqi"],
-        format_air_metric(today.get(AQ_COL_US_AQI)),
+        format_air_metric(primary_series_value(today, AQ_COL_US_AQI_DAY, AQ_COL_US_AQI_MAX)),
         "🌫️",
         T["metric_aqi_sub"],
         "#6B5B95",
@@ -1310,9 +1565,14 @@ with m5:
 with m6:
     render_metric_card(
         T["metric_pm25"],
-        format_air_metric(today.get(AQ_COL_PM25)),
+        format_air_metric(primary_series_value(today, AQ_COL_PM25_DAY, AQ_COL_PM25_MAX)),
         "😷",
-        T["metric_pm25_sub"],
+        metric_reference_sub(
+            T["metric_pm25_sub"],
+            format_air_metric(today.get(AQ_COL_PM25_MAX))
+            if AQ_COL_PM25_MAX in today.index
+            else None,
+        ),
         "#8E7CC3",
     )
 
@@ -1331,31 +1591,38 @@ guidance_context = {
     "city": location_label,
     "school_type": school_type,
     "outdoor_activity_planned": bool(outdoor_activity),
-    "today_max_temperature_c": float(max_temp),
-    "today_apparent_temperature_max_c": (
-        float(apparent_max)
-        if apparent_max is not None
-        and not (isinstance(apparent_max, float) and pd.isna(apparent_max))
-        else None
-    ),
-    "humidity_percent": int(humidity),
-    "uv_index": _uv_numeric(today_uv),
+    "insufficient_campus_shade": bool(insufficient_shade),
+    "insufficient_drinking_water_facilities": bool(insufficient_water),
+    "exposure_window": "10:00–16:00 local daytime average",
+    "risk_scoring_note": "Risk score uses daily max temperature, humidity, apparent temp, and AQI",
+    "risk_max_temperature_c": risk_max_temp,
+    "risk_humidity_percent": risk_humidity,
+    "risk_apparent_temperature_c": risk_apparent,
+    "risk_us_aqi": risk_aqi,
+    "daytime_avg_temperature_c": float(today_temp),
+    "daytime_avg_apparent_temperature_c": today_apparent,
+    "daytime_avg_humidity_percent": int(today_humidity),
+    "daytime_avg_uv_index": _uv_numeric(today_uv),
+    "daytime_avg_us_aqi": today_us_aqi,
+    "daytime_avg_pm25_ug_m3": today_pm25,
+    "daily_max_temperature_c": optional_float(today.get(COL_MAX_TEMP)),
+    "daily_max_apparent_temperature_c": optional_float(today.get(COL_MAX_APPARENT)),
+    "daily_max_humidity_percent": optional_float(today.get(COL_MAX_HUM)),
+    "daily_max_uv_index": _uv_numeric(today.get(COL_MAX_UV)),
     "risk_score": float(risk_score),
     "risk_level": today_risk,
     "language": "Chinese" if lang == "zh" else "English",
-    "us_aqi_daily_max": today_us_aqi,
-    "pm25_daily_max_ug_m3": today_pm25,
     "geocoding_source": location.get("source", ""),
 }
 
 guidance_teachers = generate_guidance(
-    "Teachers", today_risk, max_temp, humidity, today_uv, outdoor_activity, lang
+    "Teachers", today_risk, today_temp, today_humidity, today_uv, outdoor_activity, lang
 )
 guidance_parents = generate_guidance(
-    "Parents", today_risk, max_temp, humidity, today_uv, outdoor_activity, lang
+    "Parents", today_risk, today_temp, today_humidity, today_uv, outdoor_activity, lang
 )
 guidance_nurses = generate_guidance(
-    "School Nurses", today_risk, max_temp, humidity, today_uv, outdoor_activity, lang
+    "School Nurses", today_risk, today_temp, today_humidity, today_uv, outdoor_activity, lang
 )
 
 if use_ai_guidance:
