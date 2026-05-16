@@ -104,7 +104,17 @@ The app opens in your browser (default [http://localhost:8501](http://localhost:
 
 ```text
 heatsafe-campus/
-├── app.py              # Application entry (UI, APIs, logic)
+├── app.py              # Streamlit entry point (layout and main flow)
+├── config.py           # API URLs, env helpers, shared constants
+├── text_strings.py     # Bilingual UI strings and templates
+├── geocoding.py        # City aliases, Open-Meteo and Amap geocoding
+├── weather.py          # Forecast, air quality, and data loading
+├── risk.py             # Risk score and level helpers
+├── guidance.py         # Rule-based and DeepSeek role guidance
+├── parent_notice.py    # Parent notice generator
+├── student_health.py   # Student heat-health AI assistant
+├── map_utils.py        # Folium school map
+├── ui_components.py    # CSS, charts, metric cards, formatters
 ├── requirements.txt    # Python dependencies
 ├── LICENSE             # MIT License
 ├── README.md           # This file
